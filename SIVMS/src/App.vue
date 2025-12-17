@@ -1,37 +1,15 @@
-<script setup>
-//import 导入主页
-</script>
-
 <template>
-  <header>
-  </header>
+  <router-view />
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
-}
+<script setup>
+// 可以为空
+</script>
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+<style>
+/* 可加全局样式 */
+body {
+  margin: 0;
+  padding: 0;
 }
 </style>

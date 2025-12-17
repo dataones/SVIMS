@@ -1,0 +1,73 @@
+.venue-list {
+  padding: 0 0 40px 0;
+}
+
+.list-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ... 原有的loading、empty样式保持不变 ... */
+
+.venues-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+.load-more {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.load-more-btn {
+  padding: 12px 40px;
+  background: white;
+  color: #007bff;
+  border: 2px solid #007bff;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.load-more-btn:hover:not(:disabled) {
+  background: #007bff;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.load-more-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  text-align: center;
+  padding: 15px 0;
+  color: #6c757d;
+  font-size: 14px;
+  border-top: 1px solid #e9ecef;
+  margin-top: 20px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .venues-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .venues-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .venue-actions {
+    flex-direction: column;
+  }
+}

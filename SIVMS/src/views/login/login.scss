@@ -1,0 +1,436 @@
+.login-container {
+  height: 100vh;
+  display: flex;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  overflow: hidden;
+  position: relative;
+
+  // 整个页面的装饰效果
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 60%;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.1);
+    transform: rotate(45deg);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 300px;
+    background:
+      radial-gradient(circle at 30% 100%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 70% 100%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    z-index: 0;
+  }
+}
+
+.login-decor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  padding: 2rem;
+  position: relative;
+  z-index: 1;
+
+  .sport-icons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    margin-bottom: 3rem;
+
+    .icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      animation: float 6s ease-in-out infinite;
+
+      &.basketball {
+        animation-delay: 0s;
+        background: linear-gradient(45deg, #4facfe, #00f2fe);
+      }
+      &.football {
+        animation-delay: 1s;
+        background: linear-gradient(45deg, #00f2fe, #4facfe);
+      }
+      &.swimming {
+        animation-delay: 2s;
+        background: linear-gradient(45deg, #4facfe, #00c9ff);
+      }
+      &.tennis {
+        animation-delay: 3s;
+        background: linear-gradient(45deg, #00f2fe, #4facfe);
+      }
+    }
+  }
+
+  .decor-text {
+    text-align: center;
+    z-index: 1;
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      letter-spacing: 1px;
+    }
+  }
+}
+
+.login-form-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  position: relative;
+  z-index: 1; // 与左侧同级
+
+  // 移除任何背景色，让整体背景透过来
+  /* background: transparent; */
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  border: none !important;
+  border-radius: 20px !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25) !important;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 2;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #4facfe, #00f2fe);
+  }
+}
+
+.form-header {
+  text-align: center;
+  margin-bottom: 2rem;
+
+  .logo {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    color: white;
+    font-size: 2rem;
+    box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+  }
+
+  h2 {
+    color: #2c3e50;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    color: #7f8c8d;
+    font-size: 0.95rem;
+  }
+}
+
+// 输入框样式微调
+:deep(.el-input) {
+  .el-input__wrapper {
+    border-radius: 10px;
+    padding: 12px 16px;
+    border: 1px solid #e8e8e8;
+    background: white;
+    transition: all 0.3s;
+
+    &:hover {
+      border-color: #4facfe;
+    }
+
+    &.is-focus {
+      border-color: #4facfe;
+      box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.2) !important;
+    }
+  }
+
+  .el-input__inner {
+    font-size: 0.95rem;
+  }
+
+  .el-input__prefix {
+    .el-icon {
+      color: #4facfe;
+    }
+  }
+}
+
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+
+  :deep(.el-checkbox) {
+    .el-checkbox__label {
+      color: #7f8c8d;
+    }
+  }
+
+  :deep(.el-link) {
+    font-size: 0.9rem;
+  }
+}
+
+.login-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  height: 48px;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.3s !important;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3) !important;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+  color: #bdc3c7;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e8e8e8;
+  }
+
+  span {
+    padding: 0 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+.social-login {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  .social-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 1.2rem;
+    border: 1px solid #e8e8e8;
+    background: white;
+    transition: all 0.3s;
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      border-color: #4facfe;
+      color: #4facfe;
+    }
+
+    &.wechat:hover {
+      color: #09bb07;
+      border-color: #09bb07;
+    }
+
+    &.alipay:hover {
+      color: #1296db;
+      border-color: #1296db;
+    }
+
+    &.phone:hover {
+      color: #4facfe;
+      border-color: #4facfe;
+    }
+  }
+}
+
+.register-link {
+  text-align: center;
+  font-size: 0.95rem;
+  color: #7f8c8d;
+
+  .register-btn {
+    font-weight: 500;
+    margin-left: 0.5rem;
+  }
+}
+
+// 动画效果
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+// 响应式设计
+@media (max-width: 992px) {
+  .login-container {
+    flex-direction: column;
+
+    &::before {
+      display: none; // 移动端简化装饰
+    }
+
+    &::after {
+      height: 150px; // 移动端减小装饰高度
+    }
+  }
+
+  .login-decor {
+    flex: none;
+    height: 200px;
+    padding: 1rem;
+
+    .sport-icons {
+      gap: 1rem;
+      margin-bottom: 1rem;
+
+      .icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+      }
+    }
+
+    .decor-text {
+      h1 {
+        font-size: 1.5rem;
+      }
+      p {
+        font-size: 0.9rem;
+      }
+    }
+  }
+
+  .login-form-container {
+    padding: 1rem;
+    flex: 1;
+    background: transparent; // 移动端确保透明
+  }
+
+  .login-card {
+    max-width: 90%;
+  }
+}
+
+// 暗色模式支持
+@media (prefers-color-scheme: dark) {
+  .login-card {
+    background: rgba(30, 30, 40, 0.95);
+
+    .form-header {
+      h2 {
+        color: white;
+      }
+      p {
+        color: #bdc3c7;
+      }
+    }
+  }
+
+  :deep(.el-input) {
+    .el-input__wrapper {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+
+      &:hover, &.is-focus {
+        background: rgba(255, 255, 255, 0.15);
+      }
+    }
+
+    .el-input__inner {
+      color: white;
+    }
+  }
+
+  .form-options :deep(.el-checkbox__label) {
+    color: #bdc3c7;
+  }
+
+  .register-link {
+    color: #bdc3c7;
+  }
+}
+
+// 添加一些微妙的装饰元素，增强整体感
+.sport-background-elements {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+
+  .bg-element {
+    position: absolute;
+    font-size: 8rem;
+    color: rgba(255, 255, 255, 0.05);
+    opacity: 0.5;
+
+    &:nth-child(1) {
+      top: 10%;
+      left: 15%;
+    }
+
+    &:nth-child(2) {
+      top: 40%;
+      right: 20%;
+    }
+
+    &:nth-child(3) {
+      bottom: 20%;
+      left: 25%;
+    }
+  }
+}
