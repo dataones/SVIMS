@@ -3,88 +3,139 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
   {
+    //登录
     path: '/login',
     name: 'Login',
     component: () => import('../views/login/UserLogin.vue'),
   },
   {
+    //注册
     path: '/register',
     name: 'Register',
     component: () => import('../views/Register/Register.vue'),
   },
   {
+    //默认访问
     path: '/',
-    redirect: '/home',
+    redirect: '/Equipment',
   },
   {
+    //首页
     path: '/home',
     name: 'Home',
     component: () => import('../views/Home/Home.vue'),
-    meta: { requiresAuth: true },
+    //meta: { requiresAuth: true },
   },
-  // 场馆详情
+  // 场馆列表
   {
     path: '/VenueList',
     name: 'VenueList',
     component: () => import('../views/Venue/components/VenueList/VenueList.vue'),
     props: true,
-    meta: { requiresAuth: true },
+    //meta: { requiresAuth: true },
   },
   {
+    //场馆
     path: '/venue',
     name: 'Venue',
     component: () => import('../views/Venue/Venue.vue'),
     props: true,
-    meta: { requiresAuth: true },
+    //meta: { requiresAuth: true },
   },
   {
+    //场馆轮播图
     path: '/VenueCarousel',
     name: 'VenueCarousel',
     component: () => import('../views/Venue/components/VenueCarousel/VenueCarousel.vue'),
     props: true,
-    meta: { requiresAuth: true },
+    //meta: { requiresAuth: true },
   },
   {
+    //场馆卡片
     path: '/VenueCard',
     name: 'VenueCard',
     component: () => import('../views/Venue/components/VenueCard/VenueCard.vue'),
     props: true,
-    meta: { requiresAuth: true },
+    //meta: { requiresAuth: true },
   },
   {
+    //场馆搜索
     path: '/VenueSearch',
     name: 'VenueSearch',
     component: () => import('../views/Venue/components/VenueSearch/VenueSearch.vue'),
     props: true,
-    meta: { requiresAuth: true },
+    //meta: { requiresAuth: true },
   },
   {
+    //首页导航栏
     path: '/HeaderNav',
     name: 'HeaderNav',
     component: () => import('../views/Home/components/HeaderNav/HeaderNav.vue'),
     props: true,
-    meta: { requiresAuth: true },
+    //meta: { requiresAuth: true },
   },
   {
+    //首页banner
     path: '/HeroBanner',
     name: 'HeroBanner',
     component: () => import('../views/Home/components/HeroBanner/HeroBanner.vue'),
     props: true,
-    meta: { requiresAuth: true },
+    //meta: { requiresAuth: true },
   },
   {
+    //首页快速操作
     path: '/QuickActions',
     name: 'QuickActions',
     component: () => import('../views/Home/components/QuickActions/QuickActions.vue'),
     props: true,
-    meta: { requiresAuth: true },
+    //meta: { requiresAuth: true },
   },
   {
+    //首页公告
     path: '/Announcement',
     name: 'Announcement',
     component: () => import('../views/Home/components/Announcement/Announcement.vue'),
     props: true,
+    //meta: { requiresAuth: true },
+  },
+  {
+    //预订页面
+    path: '/Booking',
+    name: 'Booking',
+    component: () => import('../views/booking/BookingPage.vue'),
+    props: true,
     meta: { requiresAuth: true },
+  },
+  {
+    //订单页面
+    path: '/Order',
+    name: 'Order',
+    component: () => import('../views/OrderPage/OrderPage.vue'),
+    props: true,
+    meta: { requiresAuth: true },
+  },
+  {
+    //订单管理页面
+    path: '/OrderManagement',
+    name: 'OrderManagement',
+    component: () => import('../views/OrderPage/OrderManagement.vue'),
+    props: true,
+    meta: { requiresAuth: true },
+  },
+  {
+    //订单支付
+    path: '/OrderPay',
+    name: 'OrderPay',
+    component: () => import('../views/OrderPage/OrderPay.vue'),
+    props: true,
+    meta: { requiresAuth: true },
+  },
+  //器材
+  {
+    path: '/equipment',
+    name: 'Equipment',
+    component: () => import('../views/equipment/EquipmentPage.vue'),
+    //meta: { requiresAuth: true },
   },
 ]
 

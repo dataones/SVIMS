@@ -23,24 +23,14 @@
             </template>
           </el-menu-item>
 
-          <el-menu-item index="booking">
+          <el-menu-item index="/booking">
             <i class="el-icon-date"></i>
             <span>场馆预订</span>
           </el-menu-item>
 
-          <el-sub-menu index="orders">
-            <template #title>
-              <i class="el-icon-document"></i>
-              <span>订单管理</span>
-            </template>
-            <el-menu-item index="orders-current">当前订单</el-menu-item>
-            <el-menu-item index="orders-history">历史订单</el-menu-item>
-            <el-menu-item index="orders-detail">订单详情</el-menu-item>
-          </el-sub-menu>
-
-          <el-menu-item index="payment">
-            <i class="el-icon-money"></i>
-            <span>费用结算</span>
+          <el-menu-item index="/OrderManagement">
+            <i class="el-icon-document"></i>
+            <span>订单管理</span>
           </el-menu-item>
 
           <el-menu-item index="equipment">

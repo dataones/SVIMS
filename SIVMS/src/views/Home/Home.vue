@@ -62,7 +62,11 @@
             </ul>
           </div>
         </div>
-        <div class="copyright">© 2024 体育场馆综合管理系统. All rights reserved.</div>
+        <div class="copyright">
+          © 2025 体育场馆综合管理系统. All rights reserved.
+          <a href="https://beian.miit.gov.cn/" target="_blank" style="color: aliceblue;">渝ICP备2025076592号</a>
+        </div>
+
       </footer>
     </div>
   </div>

@@ -109,6 +109,8 @@ import loginLogic from './login.js'
 const { form, formRef, rules, loading, rememberMe, handleLogin, handleRegister } = loginLogic()
 </script>
 
-<style lang="scss" scoped>
-@import './login.scss';
+<style lang="scss">
+/* 使用 @use 替代 @import */
+@use './login.scss';
+
 </style>

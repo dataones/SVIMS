@@ -209,9 +209,7 @@ const {
   agreementChecked,
   passwordStrengthClass,
   passwordStrengthText,
-  userTypeText,
   isPhoneValid,
-  prevStep,
   nextStep,
   sendSmsCode,
   goToLogin,
@@ -219,5 +217,5 @@ const {
 </script>
 
 <style lang="scss" scoped>
-@import './register.scss';
+@use './register.scss';
 </style>
