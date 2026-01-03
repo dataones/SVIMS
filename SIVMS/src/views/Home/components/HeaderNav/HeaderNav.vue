@@ -33,20 +33,26 @@
             <span>订单管理</span>
           </el-menu-item>
 
-          <el-menu-item index="equipment">
+          <el-menu-item index="/equipment">
             <i class="el-icon-basketball"></i>
             <span>器材借用</span>
           </el-menu-item>
 
-          <el-menu-item index="evaluation">
-            <i class="el-icon-chat-dot-round"></i>
-            <span>用户评价</span>
+          <!-- 管理员专属：审批管理 -->
+          <el-menu-item v-if="isAdmin" index="/approval">
+            <i class="el-icon-s-check"></i>
+            <span>审批管理</span>
           </el-menu-item>
         </el-menu>
       </nav>
 
       <!-- 右侧用户区域 -->
       <div class="nav-user">
+        <!-- 管理员标识 -->
+        <el-tag v-if="isAdmin" type="danger" size="small" class="admin-tag">
+          <i class="el-icon-s-custom"></i> 管理员
+        </el-tag>
+
         <el-dropdown @command="handleUserCommand">
           <div class="user-info">
             <el-avatar :size="36" :src="userAvatar" :icon="UserFilled" class="user-avatar" />
@@ -64,6 +70,10 @@
               <el-dropdown-item command="messages" divided>
                 <i class="el-icon-message"></i> 我的消息
                 <el-badge :value="messageCount" v-if="messageCount > 0" />
+              </el-dropdown-item>
+              <!-- 管理员专属菜单 -->
+              <el-dropdown-item v-if="isAdmin" command="adminPanel" divided>
+                <i class="el-icon-s-tools"></i> 管理后台
               </el-dropdown-item>
               <el-dropdown-item command="logout" divided>
                 <i class="el-icon-switch-button"></i> 退出登录
@@ -91,9 +101,15 @@ export default {
     const userStore = useUserStore()
     const activeNav = ref('venues')
 
-    const userName = computed(() => userStore.name)
+    const userName = computed(() => userStore.name || '用户')
     const userAvatar = computed(() => userStore.avatar)
-    const messageCount = computed(() => userStore.unreadMessages)
+    const messageCount = computed(() => userStore.unreadMessages || 0)
+
+    // 判断是否为管理员
+    const isAdmin = computed(() => {
+      // 根据你的用户存储结构调整，可能是 role === 'admin' 或 userType === 1 等
+      return userStore.role === 'admin' || userStore.userType === 'admin' || userStore.isAdmin
+    })
 
     const handleMenuSelect = (index) => {
       activeNav.value = index
@@ -110,6 +126,9 @@ export default {
           break
         case 'messages':
           router.push('/messages')
+          break
+        case 'adminPanel':
+          router.push('/resourceManage')
           break
         case 'logout':
           handleLogout()
@@ -136,6 +155,7 @@ export default {
       userAvatar,
       userName,
       messageCount,
+      isAdmin,
       UserFilled,
       handleMenuSelect,
       handleUserCommand,
@@ -236,6 +256,21 @@ export default {
   }
 
   .nav-user {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+
+    .admin-tag {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+      font-weight: 500;
+
+      i {
+        margin-right: 4px;
+      }
+    }
+
     .user-info {
       display: flex;
       align-items: center;
@@ -312,8 +347,16 @@ export default {
       }
     }
 
-    .nav-user .user-info .user-name {
-      display: none;
+    .nav-user {
+      .admin-tag {
+        span {
+          display: none;
+        }
+      }
+
+      .user-info .user-name {
+        display: none;
+      }
     }
   }
 }

@@ -61,8 +61,8 @@
         </div>
       </div>
 
-      <!-- 搜索框 -->
-      <div class="search-section" :key="searchKey">
+      <!-- 搜索框 - 移除 :key 绑定 -->
+      <div class="search-section">
         <div class="search-box">
           <div class="search-input-group">
             <el-input
@@ -146,16 +146,6 @@
                 {{ getStatusText(venue.status) }}
               </div>
               <div class="venue-type">{{ venue.type }}</div>
-              <!-- 收藏按钮（已注释，暂时禁用该功能） -->
-              <!--
-              <button
-                class="favorite-btn"
-                @click.stop="toggleFavorite(venue)"
-                :class="{ active: isFavorite(venue.id) }"
-              >
-                <i class="el-icon-star"></i>
-              </button>
-              -->
             </div>
 
             <!-- 场馆信息 -->
@@ -273,16 +263,63 @@
       </div>
     </div>
   </div>
+  <div>
+    <!-- 底部信息 -->
+    <footer class="home-footer">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3><i class="el-icon-s-opportunity"></i> 体育场馆综合管理系统</h3>
+          <p>智慧管理 · 便捷预约 · 高效运营</p>
+          <p>为您提供最优质的体育场馆服务体验</p>
+        </div>
+        <div class="footer-section">
+          <h4>服务支持</h4>
+          <ul>
+            <li><el-link :underline="false">使用帮助</el-link></li>
+            <li><el-link :underline="false">常见问题</el-link></li>
+            <li><el-link :underline="false">联系我们</el-link></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>关于我们</h4>
+          <ul>
+            <li><el-link :underline="false">平台介绍</el-link></li>
+            <li><el-link :underline="false">服务条款</el-link></li>
+            <li><el-link :underline="false">隐私政策</el-link></li>
+          </ul>
+        </div>
+      </div>
+      <div class="copyright">
+        © 2025 体育场馆综合管理系统. All rights reserved.
+        <div>
+          <img
+            src="https://beian.mps.gov.cn/web/assets/logo01.6189a29f.png"
+            alt="渝公网安备"
+            style="width: 20px; height: 20px; margin-right: 5px"
+          />
+          <a
+            href="https://beian.mps.gov.cn/#/query/webSearch"
+            target="_blank"
+            style="color: aliceblue"
+          >
+            渝公网安备50024002000227号</a
+          ><span> · </span>
+          <a href="https://beian.miit.gov.cn/" target="_blank" style="color: aliceblue"
+            >渝ICP备2025076592号-3</a
+          >
+        </div>
+      </div>
+    </footer>
+  </div>
 </template>
 
 <script>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import NavBar from '../Home/components/HeaderNav/HeaderNav.vue'
 import { fetchVenues } from '@/api/venue'
-//import { addFavorite, removeFavorite, fetchFavorites } from '@/api/venue'
 
 export default {
   name: 'BookingPage',
@@ -295,7 +332,7 @@ export default {
     const router = useRouter()
     const userStore = useUserStore()
     const route = useRoute()
-    const searchKey = ref(Date.now())
+
     // 用户相关状态
     const isLogin = computed(() => userStore.isLogin)
     const userName = computed(() => userStore.name)
@@ -311,10 +348,6 @@ export default {
     const currentPage = ref(1)
     const pageSize = ref(10)
     const total = ref(0)
-
-    // 收藏相关
-    /* const favoriteVenues = ref([])
-    const loadingFavorites = ref(false) */
 
     // 默认图片
     const defaultImage =
@@ -341,18 +374,16 @@ export default {
       return Array.from(types)
     })
 
-    // 用户统计数据（模拟）
+    // 用户统计数据
     const userBookingsCount = computed(() => {
       return userStore.userInfo?.bookingCount || 0
     })
 
-    // 收藏计数（功能被注释，返回占位 0 避免引用错误）
     const userFavoritesCount = computed(() => 0)
 
     // 监听登录状态变化
     watch(isLogin, (newVal) => {
       if (newVal) {
-        /* loadUserData() */
         loadVenues()
       }
     })
@@ -360,7 +391,6 @@ export default {
     // 生命周期
     onMounted(() => {
       if (isLogin.value) {
-        /* loadUserData() */
         loadVenues()
       }
     })
@@ -373,7 +403,7 @@ export default {
         const params = {
           pageNum: currentPage.value,
           pageSize: pageSize.value,
-          status: 1, // 只显示营业中的场馆
+          status: 1,
           type: selectedType.value || undefined,
           name: searchKeyword.value || undefined,
         }
@@ -382,24 +412,17 @@ export default {
 
         let venuesData = response.data.records || response.data.list || []
 
-        // 应用价格筛选（后端返回 price 字段）
         if (selectedPriceRange.value) {
           venuesData = filterByPrice(venuesData, selectedPriceRange.value)
         }
 
-        // 将后端字段映射为前端模板使用的字段
         venues.value = venuesData.map((v) => {
           return {
-            // 保留原 id/name/type/price/image/description/status/remark
             ...v,
-            // 后端返回 location -> 前端使用 address
             address: v.location || v.address || '',
-            // 后端返回 openTime/closeTime -> 前端使用 openHours
             openHours:
               v.openTime && v.closeTime ? `${v.openTime}-${v.closeTime}` : v.openHours || '',
-            // facilities 可能来自 remark 或原有字段
             facilities: v.facilities || (v.remark ? v.remark : ''),
-            // 保证模板里可能用到的字段有合理默认值
             capacity: v.capacity || v.capacity === 0 ? v.capacity : undefined,
             rating: v.rating || undefined,
             reviewCount: v.reviewCount || undefined,
@@ -412,8 +435,6 @@ export default {
       } catch (error) {
         console.error('加载场馆失败:', error)
         ElMessage.error('加载场馆列表失败')
-
-        // 不再使用本地测试数据，发生错误时清空列表并显示错误
         venues.value = []
         filteredVenues.value = []
         total.value = 0
@@ -473,7 +494,7 @@ export default {
     }
 
     const viewVenueDetail = (venue) => {
-      router.push(`/venue/detail/${venue.id}`)
+      router.push(`/venue/details/${venue.id}`)
     }
 
     const handleBooking = (venue) => {
@@ -483,7 +504,6 @@ export default {
         return
       }
 
-      // 跳转到订单页面
       router.push({
         path: '/Order',
         query: { venueId: venue.id },
@@ -498,11 +518,9 @@ export default {
       }
 
       ElMessage.info(`快速预订 ${venue.name} ${timeSlot}`)
-      // 这里可以快速跳转到预订页面
     }
 
     const getQuickTimeSlots = () => {
-      // 获取未来几小时的快速预订时间
       const now = new Date()
       const currentHour = now.getHours()
       return ['14:00-16:00', '16:00-18:00', '19:00-21:00']
@@ -512,14 +530,7 @@ export default {
         })
         .slice(0, 2)
     }
-    // 监听路由变化，重新生成key
-    watch(
-      () => route.path,
-      () => {
-        searchKey.value = Date.now()
-      },
-      { immediate: true },
-    )
+
     const handleSizeChange = (size) => {
       pageSize.value = size
       currentPage.value = 1
@@ -538,6 +549,7 @@ export default {
     const goToRegister = () => {
       router.push('/register')
     }
+
     return {
       // 用户相关
       isLogin,
@@ -558,8 +570,7 @@ export default {
       total,
       defaultImage,
       priceRanges,
-      route,
-      searchKey,
+
       // 计算属性
       hasFilters,
       venueTypes,
@@ -570,8 +581,6 @@ export default {
       getStatusClass,
       getStatusText,
       getFacilities,
-      /* isFavorite,
-      toggleFavorite, */
       calculateDiscount,
       viewVenueDetail,
       handleBooking,
@@ -590,16 +599,6 @@ export default {
 .booking-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-}
-
-/* 用户欢迎信息：改为蓝绿渐变背景 */
-.user-welcome {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  border-radius: 20px;
-  padding: 40px;
-  margin-bottom: 30px;
-  color: white;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
 }
 
 /* 登录提示样式 */
@@ -686,12 +685,12 @@ export default {
 
 // 用户欢迎信息
 .user-welcome {
-  background: linear-gradient(135deg, #6adef8 0%, #05dbf7 100%);
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   border-radius: 20px;
   padding: 40px;
   margin-bottom: 30px;
   color: white;
-  box-shadow: 0 10px 30px rgba(148, 221, 233, 0.3);
+  box-shadow: 0 10px 30px rgba(79, 172, 254, 0.3);
 
   @media (max-width: 768px) {
     padding: 30px 20px;
@@ -711,7 +710,7 @@ export default {
     .user-avatar {
       :deep(.el-avatar) {
         background: white;
-        color: #66cdea;
+        color: #4facfe;
         font-size: 24px;
         font-weight: 600;
       }
@@ -782,19 +781,16 @@ export default {
   }
 }
 
-// 搜索区域
+// 搜索区域 - 核心修复
 .search-section {
   background: white;
   border-radius: 20px;
   padding: 30px;
   margin-bottom: 30px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  min-height: 140px; // 添加最小高度
-  overflow: visible; // 确保内容不会被裁剪
 
   @media (max-width: 768px) {
-    padding: 25px;
-    min-height: 160px; // 移动端增加高度
+    padding: 20px;
   }
 }
 
@@ -802,32 +798,25 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  min-height: 80px; // 确保容器有足够高度
 }
-// 输入框组 - 防止溢出
+
+// 输入框组 - 固定尺寸防止收缩
 .search-input-group {
+  width: 100%;
+
   :deep(.el-input) {
-    height: 48px; // 固定高度
+    width: 100%;
+
     .el-input__wrapper {
-      // 清除可能冲突的padding
-      padding: 0 !important; // 先清除所有padding
-
-      // 然后设置自定义padding
-      .el-input__inner {
-        padding: 0 15px;
-        height: 100%;
-      }
-
-      .el-input__prefix {
-        padding-left: 15px;
-        padding-right: 8px;
-      }
-
+      height: 48px;
       border-radius: 12px;
       border: 2px solid #e2e8f0;
       background: #f8fafc;
-      transition: all 0.3s ease;
-      height: 100%;
+      box-sizing: border-box;
+      transition:
+        border-color 0.3s ease,
+        box-shadow 0.3s ease,
+        background-color 0.3s ease;
 
       &:hover {
         border-color: #cbd5e1;
@@ -835,21 +824,13 @@ export default {
       }
 
       &.is-focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        border-color: #4facfe;
+        box-shadow: 0 0 0 4px rgba(79, 172, 254, 0.1);
         background: white;
       }
     }
 
-    .el-input__inner {
-      height: 100%; // 确保输入框内容高度正确
-    }
-
     .el-input__prefix {
-      display: flex;
-      align-items: center;
-      height: 100%;
-
       .el-icon-search {
         font-size: 18px;
         color: #94a3b8;
@@ -857,13 +838,13 @@ export default {
     }
   }
 }
-// 筛选组 - 修复布局问题
+
+// 筛选组 - 使用固定宽度
 .filter-group {
   display: flex;
   gap: 15px;
   align-items: center;
-  flex-wrap: wrap; // 允许换行
-  min-height: 50px; // 确保有足够空间
+  justify-content: center;
 
   @media (max-width: 768px) {
     flex-direction: column;
@@ -873,166 +854,591 @@ export default {
 
   .type-filter,
   .price-filter {
-    flex: 1;
-    min-width: 200px; // 设置最小宽度
+    width: 200px;
+    min-width: 200px;
+    flex-shrink: 0;
 
     @media (max-width: 768px) {
       width: 100%;
-      min-width: auto;
+      min-width: 100%;
     }
 
     :deep(.el-select) {
       width: 100%;
 
       .el-input__wrapper {
-        height: 48px; // 和输入框保持一致
+        height: 48px;
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        background: #f8fafc;
+        box-sizing: border-box;
+        transition:
+          border-color 0.3s ease,
+          box-shadow 0.3s ease,
+          background-color 0.3s ease;
+
+        &:hover {
+          border-color: #cbd5e1;
+          background: white;
+        }
+
+        &.is-focus {
+          border-color: #4facfe;
+          box-shadow: 0 0 0 4px rgba(79, 172, 254, 0.1);
+          background: white;
+        }
       }
     }
   }
+
   .reset-btn {
+    height: 48px;
+    min-height: 48px;
+    padding: 0 24px;
+    border-radius: 12px;
     white-space: nowrap;
-    height: 48px; // 保持按钮高度一致
+    flex-shrink: 0;
+    box-sizing: border-box;
 
     @media (max-width: 768px) {
       width: 100%;
     }
+
+    i {
+      margin-right: 6px;
+    }
   }
 }
 
-/* 场馆列表区域 - 横向展示（修改） */
+// 场馆列表区域
+.venues-section {
+  min-height: 400px;
+}
+
+// 加载状态
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+
+  .loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #4facfe;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  p {
+    margin-top: 20px;
+    color: #64748b;
+    font-size: 16px;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// 空状态
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+
+  .empty-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+  }
+
+  h3 {
+    font-size: 24px;
+    color: #1e293b;
+    margin-bottom: 10px;
+  }
+
+  p {
+    color: #64748b;
+    margin-bottom: 30px;
+  }
+}
+
+// 场馆列表
 .venues-list {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-/* 每一项横向卡片布局：左 图，中 信息，右 操作 */
+// 场馆卡片
 .venue-item {
   display: flex;
   gap: 20px;
   align-items: flex-start;
   background: white;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
-  position: relative;
-  overflow: hidden;
-}
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 
-/* 图片区域固定宽度 */
-.venue-image {
-  flex: 0 0 260px;
-  height: 160px;
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  position: relative;
-}
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  }
 
-.venue-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* 信息区自适应占满剩余空间 */
-.venue-info {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* 预订区固定宽度并垂直布局，按钮靠右显示 */
-.booking-action {
-  flex: 0 0 220px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: flex-end;
-}
-
-/* 处理收藏按钮位置 */
-.favorite-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 3;
-}
-
-/* 小部件微调 */
-.venue-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.venue-name {
-  margin: 0;
-  cursor: pointer;
-}
-
-.venue-meta {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  color: #64748b;
-  font-size: 13px;
-}
-
-/* 分页与空/加载状态保持原样 */
-.pagination-section {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-}
-
-/* 响应式：窄屏时回退为竖直布局 */
-@media (max-width: 768px) {
-  .venue-item {
+  @media (max-width: 768px) {
     flex-direction: column;
-    padding: 12px;
+    padding: 16px;
   }
+}
 
-  .venue-image {
+// 场馆图片
+.venue-image {
+  flex: 0 0 280px;
+  height: 180px;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+
+  @media (max-width: 768px) {
     width: 100%;
-    height: 180px;
     flex: none;
-    border-radius: 8px;
+    height: 200px;
   }
 
-  .booking-action {
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  &:hover img {
+    transform: scale(1.05);
+  }
+
+  .venue-status {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+
+    &.open {
+      background: rgba(16, 185, 129, 0.9);
+      color: white;
+    }
+
+    &.closed {
+      background: rgba(239, 68, 68, 0.9);
+      color: white;
+    }
+  }
+
+  .venue-type {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border-radius: 20px;
+    font-size: 12px;
+  }
+}
+
+// 场馆信息
+.venue-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+
+  .venue-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+    flex-wrap: wrap;
+
+    .venue-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0;
+      cursor: pointer;
+      transition: color 0.3s ease;
+
+      &:hover {
+        color: #4facfe;
+      }
+    }
+
+    .venue-rating {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+
+      .stars {
+        color: #fbbf24;
+        font-size: 14px;
+      }
+
+      .rating-value {
+        font-weight: 600;
+        color: #1e293b;
+      }
+
+      .review-count {
+        color: #94a3b8;
+        font-size: 13px;
+      }
+    }
+  }
+
+  .venue-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #64748b;
+      font-size: 14px;
+
+      i {
+        color: #94a3b8;
+      }
+    }
+  }
+
+  .venue-description {
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .venue-facilities {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    .facility-tag {
+      padding: 4px 12px;
+      background: #f1f5f9;
+      color: #64748b;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+  }
+}
+
+// 预订区域
+.booking-action {
+  flex: 0 0 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 15px;
+
+  @media (max-width: 768px) {
     width: 100%;
     flex: none;
     align-items: stretch;
-    margin-top: 10px;
   }
 
-  .favorite-btn {
-    top: 10px;
-    right: 10px;
+  .price-info {
+    text-align: right;
+
+    @media (max-width: 768px) {
+      text-align: left;
+    }
+
+    .current-price {
+      display: flex;
+      align-items: baseline;
+      justify-content: flex-end;
+      gap: 2px;
+
+      @media (max-width: 768px) {
+        justify-content: flex-start;
+      }
+
+      .price-label {
+        font-size: 16px;
+        color: #ef4444;
+        font-weight: 600;
+      }
+
+      .price-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #ef4444;
+      }
+
+      .price-unit {
+        font-size: 14px;
+        color: #94a3b8;
+      }
+    }
+
+    .original-price {
+      text-decoration: line-through;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .discount-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #fef2f2;
+      color: #ef4444;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+  }
+
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+
+    .el-button {
+      width: 100%;
+      border-radius: 10px;
+      font-weight: 600;
+
+      i {
+        margin-right: 6px;
+      }
+    }
+
+    .detail-btn {
+      background: #f1f5f9;
+      border-color: #e2e8f0;
+      color: #64748b;
+
+      &:hover {
+        background: #e2e8f0;
+        color: #475569;
+      }
+    }
+
+    .book-btn {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border: none;
+
+      &:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      }
+    }
+  }
+
+  .quick-booking {
+    width: 100%;
+
+    .quick-title {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+
+    .time-slots {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+
+      .time-slot {
+        padding: 6px 12px;
+        background: #f0fdf4;
+        color: #10b981;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: #10b981;
+          color: white;
+        }
+      }
+    }
   }
 }
 
-/* 暗色主题支持 */
+// 分页
+.pagination-section {
+  margin-top: 40px;
+  display: flex;
+  justify-content: center;
+
+  :deep(.el-pagination) {
+    .el-pager li {
+      border-radius: 8px;
+
+      &.is-active {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      }
+    }
+  }
+}
+
+// 暗色主题支持
 @media (prefers-color-scheme: dark) {
   .booking-page {
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   }
 
-  .login-prompt {
-    background: #1e293b;
-    border: 1px solid #334155;
-  }
-
+  .login-prompt,
   .search-section,
   .venue-item {
     background: #1e293b;
     border: 1px solid #334155;
   }
 
-  // ... 其他暗色主题样式
+  .venue-name,
+  .venue-rating .rating-value {
+    color: #f1f5f9;
+  }
+
+  .venue-description,
+  .venue-meta .meta-item {
+    color: #94a3b8;
+  }
+
+  .search-input-group :deep(.el-input .el-input__wrapper),
+  .filter-group :deep(.el-select .el-input__wrapper) {
+    background: #334155;
+    border-color: #475569;
+
+    &:hover,
+    &.is-focus {
+      background: #3b4252;
+    }
+  }
+}
+</style>
+
+<style lang="scss" scoped>
+.home-footer {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: white;
+  padding: 60px 20px 30px;
+  margin-top: 80px;
+
+  .footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 40px;
+
+    .footer-section {
+      h3 {
+        color: #4facfe;
+        margin-bottom: 15px;
+        font-size: 1.3rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        i {
+          font-size: 1.5rem;
+        }
+      }
+
+      h4 {
+        color: #4facfe;
+        margin-bottom: 20px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        position: relative;
+        padding-bottom: 10px;
+
+        &::after {
+          content: '';
+          position: absolute;
+          left: 0;
+          bottom: 0;
+          width: 40px;
+          height: 3px;
+          background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+          border-radius: 2px;
+        }
+      }
+
+      p {
+        color: #cbd5e1;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+        line-height: 1.6;
+
+        &:first-of-type {
+          color: #94a3b8;
+          font-weight: 500;
+        }
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+
+        li {
+          margin-bottom: 12px;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          .el-link {
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+
+            &:hover {
+              color: #4facfe;
+              padding-left: 5px;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .copyright {
+    max-width: 1200px;
+    margin: 50px auto 0;
+    padding-top: 30px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.9rem;
+  }
 }
 </style>

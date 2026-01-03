@@ -37,37 +37,54 @@
         <VenueList :venues="featuredVenues" />
       </section>
 
-      <!-- 底部信息 -->
-      <footer class="home-footer">
-        <div class="footer-content">
-          <div class="footer-section">
-            <h3><i class="el-icon-s-opportunity"></i> 体育场馆综合管理系统</h3>
-            <p>智慧管理 · 便捷预约 · 高效运营</p>
-            <p>为您提供最优质的体育场馆服务体验</p>
+      <div>
+        <!-- 底部信息 -->
+        <footer class="home-footer">
+          <div class="footer-content">
+            <div class="footer-section">
+              <h3><i class="el-icon-s-opportunity"></i> 体育场馆综合管理系统</h3>
+              <p>智慧管理 · 便捷预约 · 高效运营</p>
+              <p>为您提供最优质的体育场馆服务体验</p>
+            </div>
+            <div class="footer-section">
+              <h4>服务支持</h4>
+              <ul>
+                <li><el-link :underline="false">使用帮助</el-link></li>
+                <li><el-link :underline="false">常见问题</el-link></li>
+                <li><el-link :underline="false">联系我们</el-link></li>
+              </ul>
+            </div>
+            <div class="footer-section">
+              <h4>关于我们</h4>
+              <ul>
+                <li><el-link :underline="false">平台介绍</el-link></li>
+                <li><el-link :underline="false">服务条款</el-link></li>
+                <li><el-link :underline="false">隐私政策</el-link></li>
+              </ul>
+            </div>
           </div>
-          <div class="footer-section">
-            <h4>服务支持</h4>
-            <ul>
-              <li><el-link :underline="false">使用帮助</el-link></li>
-              <li><el-link :underline="false">常见问题</el-link></li>
-              <li><el-link :underline="false">联系我们</el-link></li>
-            </ul>
+          <div class="copyright">
+            © 2025 体育场馆综合管理系统. All rights reserved.
+            <div>
+              <img
+                src="https://beian.mps.gov.cn/web/assets/logo01.6189a29f.png"
+                alt="渝公网安备"
+                style="width: 20px; height: 20px; margin-right: 5px"
+              />
+              <a
+                href="https://beian.mps.gov.cn/#/query/webSearch"
+                target="_blank"
+                style="color: aliceblue"
+              >
+                渝公网安备50024002000227号</a
+              ><span> · </span>
+              <a href="https://beian.miit.gov.cn/" target="_blank" style="color: aliceblue"
+                >渝ICP备2025076592号-1</a
+              >
+            </div>
           </div>
-          <div class="footer-section">
-            <h4>关于我们</h4>
-            <ul>
-              <li><el-link :underline="false">平台介绍</el-link></li>
-              <li><el-link :underline="false">服务条款</el-link></li>
-              <li><el-link :underline="false">隐私政策</el-link></li>
-            </ul>
-          </div>
-        </div>
-        <div class="copyright">
-          © 2025 体育场馆综合管理系统. All rights reserved.
-          <a href="https://beian.miit.gov.cn/" target="_blank" style="color: aliceblue;">渝ICP备2025076592号</a>
-        </div>
-
-      </footer>
+        </footer>
+      </div>
     </div>
   </div>
 </template>
@@ -166,28 +183,12 @@ export default {
         bgColor: 'rgba(0, 242, 254, 0.1)',
       },
       {
-        id: 'payment',
-        title: '费用结算',
-        icon: 'el-icon-money',
-        description: '在线支付订单费用',
-        color: '#4facfe',
-        bgColor: 'rgba(79, 172, 254, 0.1)',
-      },
-      {
         id: 'equipment',
         title: '器材借用',
         icon: 'el-icon-basketball',
         description: '申请借用运动器材',
         color: '#00f2fe',
         bgColor: 'rgba(0, 242, 254, 0.1)',
-      },
-      {
-        id: 'evaluation',
-        title: '用户评价',
-        icon: 'el-icon-chat-dot-round',
-        description: '分享您的体验',
-        color: '#4facfe',
-        bgColor: 'rgba(79, 172, 254, 0.1)',
       },
       {
         id: 'search',
@@ -272,11 +273,9 @@ export default {
       console.log('快捷操作:', action)
       const actionRoutes = {
         booking: '/booking',
-        orders: '/orders',
-        payment: '/payment',
-        equipment: '/equipment/borrow',
-        evaluation: '/evaluation',
-        search: '/venues/search',
+        orders: '/OrderManagement',
+        equipment: '/equipment',
+        search: '/venue',
       }
 
       if (actionRoutes[action.id]) {

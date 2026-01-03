@@ -17,7 +17,7 @@ const routes = [
   {
     //默认访问
     path: '/',
-    redirect: '/Equipment',
+    redirect: '/Home',
   },
   {
     //首页
@@ -136,6 +136,63 @@ const routes = [
     name: 'Equipment',
     component: () => import('../views/equipment/EquipmentPage.vue'),
     //meta: { requiresAuth: true },
+  },
+  {
+    path: '/reviews',
+    name: 'VenueReviews',
+    component: () => import('../views/enueReviews/enueReviews.vue'),
+    meta: { title: '场馆评价' },
+  },
+  // router/index.js
+  {
+    path: '/order/review/:orderId',
+    name: 'OrderReview',
+    component: () => import('@/views/orderReview/OrderReview.vue'),
+  },
+  {
+    path: '/venue/details/:venueId',
+    name: 'VenueDetails',
+    component: () => import('../views/VenueDetails/VenueDetails.vue'),
+    props: (route) => ({
+      venueId: Number(route.params.venueId),
+    }),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('../views/Profile/Profile.vue'),
+    meta: { requiresAuth: true },
+  },
+  // 审批页面
+  {
+    path: '/approval',
+    name: 'Approval',
+    component: () => import('../views/Approval/Approval.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/equipmentManage',
+    name: 'EquipmentManage',
+    component: () => import('../views/admin/EquipmentManage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/venueManage',
+    name: 'VenueManage',
+    component: () => import('../views/admin/VenueManage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/resourceManage',
+    name: 'ResourceManage',
+    component: () => import('../views/admin/ResourceManage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/reviewComponents',
+    name: 'ReviewComponents',
+    component: () => import('../components/ReviewComponent.vue'),
   },
 ]
 

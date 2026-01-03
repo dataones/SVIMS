@@ -14,13 +14,14 @@
       <div class="venue-header">
         <h3 class="venue-name">{{ venue.name }}</h3>
         <div class="venue-price">
-          ¥<span class="price-value">{{ venue.price || 0 }}</span>/小时
+          ¥<span class="price-value">{{ venue.price || 0 }}</span
+          >/小时
         </div>
       </div>
 
       <p class="venue-address">
         <span class="icon">📍</span>
-        {{ venue.address || '地址暂未提供' }}
+        {{ venue.location || '地址暂未提供' }}
       </p>
 
       <p class="venue-desc">
@@ -41,12 +42,8 @@
 
       <!-- 底部操作按钮 -->
       <div class="venue-actions">
-        <button class="btn-detail" @click.stop="handleDetail">
-          查看详情
-        </button>
-        <button class="btn-book" @click.stop="handleBook">
-          立即预约
-        </button>
+        <button class="btn-detail" @click.stop="handleDetail">查看详情</button>
+        <button class="btn-book" @click.stop="handleBook">立即预约</button>
       </div>
     </div>
   </div>
@@ -60,41 +57,57 @@ export default {
     venue: {
       type: Object,
       required: true,
-      default: () => ({})
-    }
+      default: () => ({}),
+    },
   },
 
   data() {
     return {
-      defaultImage: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+      defaultImage:
+        'https://images.unsplash.com/photo-1546519638-68e109498ffc?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
     }
   },
 
   methods: {
     getStatusClass(status) {
       switch (status) {
-        case 1: return 'open'
-        case 0: return 'closed'
-        default: return 'unknown'
+        case 1:
+          return 'open'
+        case 0:
+          return 'closed'
+        default:
+          return 'unknown'
       }
     },
 
     getStatusText(status) {
       switch (status) {
-        case 1: return '营业中'
-        case 0: return '已关闭'
-        default: return '状态未知'
+        case 1:
+          return '营业中'
+        case 0:
+          return '已关闭'
+        default:
+          return '状态未知'
       }
     },
 
     handleDetail() {
-      this.$emit('venue-click', this.venue)
+      // 先触发事件通知父组件
+      this.$emit('VenueDetails', this.venue)
+
+      // 使用 params 方式跳转
+      this.$router.push({
+        name: 'VenueDetails', // 使用路由名称
+        params: {
+          venueId: this.venue.id, // 注意参数名要和路由定义的 :venueId 一致
+        },
+      })
     },
 
     handleBook() {
-      this.$emit('book', this.venue)
-    }
-  }
+      this.$emit('booking', this.venue)
+    },
+  },
 }
 </script>
 

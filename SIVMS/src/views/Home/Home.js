@@ -61,30 +61,13 @@ export default {
       }
     }
 
-    const handleNavClick = (navItem) => {
-      console.log('导航点击:', navItem)
-      const routeMap = {
-        venues: '/venues',
-        booking: '/booking',
-        orders: '/orders',
-        payment: '/payment',
-        equipment: '/equipment',
-        evaluation: '/evaluation',
-        profile: '/profile',
-      }
-
-      if (routeMap[navItem.key]) {
-        router.push(routeMap[navItem.key])
-      }
-    }
-
     const handleQuickAction = (action) => {
       console.log('快捷操作:', action)
       const actionRoutes = {
         booking: '/booking',
-        orders: '/orders',
+        orders: '/OrderManagement',
         payment: '/payment',
-        equipment: '/equipment/borrow',
+        equipment: '/equipment',
         evaluation: '/evaluation',
         search: '/venues/search',
       }
@@ -138,7 +121,7 @@ export default {
       const pageRoutes = {
         venues: '/venues',
         booking: '/booking',
-        orders: '/orders',
+        orders: '/OrderManagement',
         equipment: '/equipment',
         help: '/help',
         faq: '/faq',
@@ -173,7 +156,7 @@ export default {
       filteredVenues,
 
       // 方法
-      handleNavClick,
+
       handleQuickAction,
       handleBannerClick,
       handleNoticeClick,

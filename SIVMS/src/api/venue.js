@@ -24,7 +24,7 @@ export function fetchVenues(params = {}) {
       pageSize: params.pageSize || 10,
       type: params.type || '',
       name: params.name || '',
-      status: params.status || '', // 普通用户不传status，只查正常场馆
+      status: params.status ?? '', // 普通用户不传status，只查正常场馆
       sortField: params.sortField || '',
       sortOrder: params.sortOrder || '',
     },

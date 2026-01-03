@@ -83,8 +83,10 @@
               <i class="el-icon-time"></i>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ statusCounts[0] || 0 }}</div>
-              <div class="stat-label">待审核</div>
+              <div class="stat-value">
+                {{ orderType === 1 ? statusCounts[1] || 0 : statusCounts[0] || 0 }}
+              </div>
+              <div class="stat-label">{{ orderType === 1 ? '申请中' : '待审核' }}</div>
             </div>
           </div>
         </div>
@@ -95,8 +97,10 @@
               <i class="el-icon-circle-check"></i>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ statusCounts[1] || 0 }}</div>
-              <div class="stat-label">已通过</div>
+              <div class="stat-value">
+                {{ orderType === 1 ? statusCounts[2] || 0 : statusCounts[1] || 0 }}
+              </div>
+              <div class="stat-label">{{ orderType === 1 ? '使用中' : '已通过' }}</div>
             </div>
           </div>
         </div>
@@ -107,8 +111,10 @@
               <i class="el-icon-finished"></i>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ statusCounts[4] || 0 }}</div>
-              <div class="stat-label">已完成</div>
+              <div class="stat-value">
+                {{ orderType === 1 ? statusCounts[3] || 0 : statusCounts[4] || 0 }}
+              </div>
+              <div class="stat-label">{{ orderType === 1 ? '已归还' : '已完成' }}</div>
             </div>
           </div>
         </div>
@@ -138,14 +144,14 @@
               <span class="filter-label">订单状态：</span>
               <el-select
                 v-model="selectedStatus"
-                placeholder="全部状态"
+                :placeholder="orderType === 1 ? '全部状态' : '全部状态'"
                 size="large"
                 clearable
                 @change="handleSearch"
               >
                 <el-option label="全部状态" value="" />
                 <el-option
-                  v-for="status in orderStatusOptions"
+                  v-for="status in orderType === 1 ? equipmentStatusOptions : orderStatusOptions"
                   :key="status.value"
                   :label="status.label"
                   :value="status.value"
@@ -293,93 +299,116 @@
                 </div>
               </div>
 
-              <!-- 订单操作 -->
-              <div class="order-actions">
-                <div class="action-buttons">
-                  <el-button size="small" @click="viewOrderDetail(order.id)" class="detail-btn">
-                    <i class="el-icon-view"></i>
-                    查看详情
-                  </el-button>
-
-                  <!-- 待审核状态 -->
-                  <template v-if="order.status === 0">
-                    <el-button
-                      type="warning"
-                      size="small"
-                      @click="handleCancel(order.id)"
-                      :loading="cancelingOrderId === order.id"
-                    >
-                      <i class="el-icon-close"></i>
-                      取消订单
-                    </el-button>
-                  </template>
-
-                  <!-- 已通过状态 -->
-                  <template v-else-if="order.status === 1">
-                    <el-button
-                      type="primary"
-                      size="small"
-                      @click="handlePayment(order)"
-                      v-if="!order.paid"
-                      :loading="payingOrderId === order.id"
-                    >
-                      <i class="el-icon-money"></i>
-                      立即支付
-                    </el-button>
-                    <el-button
-                      type="warning"
-                      size="small"
-                      @click="handleCancel(order.id)"
-                      :loading="cancelingOrderId === order.id"
-                    >
-                      <i class="el-icon-close"></i>
-                      取消订单
-                    </el-button>
-                  </template>
-
-                  <!-- 已完成状态 -->
-                  <template v-else-if="order.status === 4">
-                    <el-button type="success" size="small" @click="handleReview(order.id)">
-                      <i class="el-icon-chat-dot-round"></i>
-                      去评价
-                    </el-button>
-                    <el-button type="info" size="small" @click="handleReOrder(order)">
-                      <i class="el-icon-refresh"></i>
-                      再次预订
-                    </el-button>
-                  </template>
-
-                  <!-- 已驳回状态 -->
-                  <template v-else-if="order.status === 2">
-                    <el-button type="danger" size="small" @click="handleDelete(order.id)">
-                      <i class="el-icon-delete"></i>
-                      删除订单
-                    </el-button>
-                  </template>
-
-                  <!-- 已取消状态 -->
-                  <template v-else-if="order.status === 3">
-                    <el-button type="info" size="small" @click="handleReOrder(order)">
-                      <i class="el-icon-refresh"></i>
-                      重新预订
-                    </el-button>
-                    <el-button type="danger" size="small" @click="handleDelete(order.id)">
-                      <i class="el-icon-delete"></i>
-                      删除订单
-                    </el-button>
-                  </template>
+              <!-- 订单详情 -->
+              <div class="order-details">
+                <div class="details-content">
+                  <div class="detail-row">
+                    <div class="detail-item">
+                      <span class="label">订单状态：</span>
+                      <span class="value status-value" :class="getStatusClass(order.status)">
+                        {{ getStatusText(order.status) }}
+                      </span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="label">预订时长：</span>
+                      <span class="value">{{ order.totalHours }}小时</span>
+                    </div>
+                  </div>
+                  <div class="detail-row">
+                    <div class="detail-item">
+                      <span class="label">场馆地址：</span>
+                      <span class="value">{{ order.venueAddress }}</span>
+                    </div>
+                  </div>
                 </div>
 
-                <!-- 支付状态 -->
-                <div v-if="order.status === 1" class="payment-status">
-                  <span v-if="order.paid" class="paid">
-                    <i class="el-icon-circle-check"></i>
-                    已支付
-                  </span>
-                  <span v-else class="unpaid">
-                    <i class="el-icon-warning-outline"></i>
-                    待支付
-                  </span>
+                <!-- 订单操作 -->
+                <div class="order-actions">
+                  <div class="action-buttons">
+                    <!-- 待审核状态 -->
+                    <template v-if="order.status === 0">
+                      <el-button
+                        type="warning"
+                        size="small"
+                        @click="handleCancel(order.id)"
+                        :loading="cancelingOrderId === order.id"
+                      >
+                        <i class="el-icon-close"></i>
+                        取消订单
+                      </el-button>
+                    </template>
+
+                    <!-- 已通过状态 -->
+                    <template v-else-if="order.status === 1">
+                      <el-button
+                        type="primary"
+                        size="small"
+                        @click="handlePayment(order)"
+                        v-if="!order.paid"
+                        :loading="payingOrderId === order.id"
+                      >
+                        <i class="el-icon-money"></i>
+                        立即支付
+                      </el-button>
+                      <el-button
+                        type="warning"
+                        size="small"
+                        @click="handleCancel(order.id)"
+                        :loading="cancelingOrderId === order.id"
+                      >
+                        <i class="el-icon-close"></i>
+                        取消订单
+                      </el-button>
+                    </template>
+
+                    <!-- 已完成状态 -->
+                    <template v-else-if="order.status === 4">
+                      <el-button type="success" size="small" @click="handleReview(order.id)">
+                        <i class="el-icon-chat-dot-round"></i>
+                        去评价
+                      </el-button>
+                      <el-button type="info" size="small" @click="handleReOrder(order)">
+                        <i class="el-icon-refresh"></i>
+                        再次预订
+                      </el-button>
+                    </template>
+
+                    <!-- 已驳回状态 -->
+                    <template v-else-if="order.status === 2">
+                      <el-button type="danger" size="small" @click="handleDelete(order.id)">
+                        <i class="el-icon-delete"></i>
+                        删除订单
+                      </el-button>
+                      <el-button type="info" size="small" @click="handleReOrder(order)">
+                        <i class="el-icon-refresh"></i>
+                        重新预订
+                      </el-button>
+                    </template>
+
+                    <!-- 已取消状态 -->
+                    <template v-else-if="order.status === 3">
+                      <el-button type="info" size="small" @click="handleReOrder(order)">
+                        <i class="el-icon-refresh"></i>
+                        重新预订
+                      </el-button>
+                      <el-button type="danger" size="small" @click="handleDelete(order.id)">
+                        <i class="el-icon-delete"></i>
+                        删除订单
+                      </el-button>
+                    </template>
+                  </div>
+
+                  <!-- 支付状态 -->
+                  <div v-if="order.status === 1" class="payment-status">
+                    <span v-if="order.paid" class="paid">
+                      <i class="el-icon-circle-check"></i>
+                      已支付
+                    </span>
+                    <span v-else class="unpaid">
+                      <i class="el-icon-warning-outline"></i>
+                      待支付
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -427,8 +456,12 @@
                 <div class="order-number">
                   <span class="label">订单号：</span>
                   <span class="value">{{ order.orderNumber }}</span>
-                  <el-tag size="small" :type="getStatusType(order.status)" class="status-tag">
-                    {{ getStatusText(order.status) }}
+                  <el-tag
+                    size="small"
+                    :type="getEquipmentStatusType(order.status)"
+                    class="status-tag"
+                  >
+                    {{ getEquipmentStatusText(order.status) }}
                   </el-tag>
                   <el-tag size="small" type="warning" class="type-tag">
                     <i class="el-icon-box"></i>
@@ -459,15 +492,11 @@
                     <div class="equipment-meta">
                       <span class="meta-item">
                         <i class="el-icon-price-tag"></i>
-                        ¥{{ item.unitPrice }}/天
+                        单价：¥{{ item.unitPrice }}
                       </span>
                       <span class="meta-item">
                         <i class="el-icon-box"></i>
                         数量：{{ item.quantity }}
-                      </span>
-                      <span class="meta-item">
-                        <i class="el-icon-date"></i>
-                        租赁：{{ item.rentalDays }}天
                       </span>
                     </div>
                   </div>
@@ -486,34 +515,20 @@
               <div class="details-content">
                 <div class="detail-row">
                   <div class="detail-item">
-                    <span class="label">租赁日期：</span>
-                    <span class="value"
-                      >{{ formatDate(order.startDate) }} 至 {{ formatDate(order.endDate) }}</span
-                    >
+                    <span class="label">订单状态：</span>
+                    <span class="value status-value" :class="getEquipmentStatusClass(order.status)">
+                      {{ getEquipmentStatusText(order.status) }}
+                    </span>
                   </div>
                   <div class="detail-item">
-                    <span class="label">总租赁天数：</span>
-                    <span class="value">{{ order.totalDays }}天</span>
+                    <span class="label">租赁天数：</span>
+                    <span class="value">{{ order.rentalDays || 1 }}天</span>
                   </div>
                 </div>
-                <div class="detail-row">
+                <div class="detail-row" v-if="order.deliveryAddress">
                   <div class="detail-item">
                     <span class="label">收货地址：</span>
                     <span class="value">{{ order.deliveryAddress }}</span>
-                  </div>
-                  <div class="detail-item">
-                    <span class="label">联系人：</span>
-                    <span class="value">{{ order.contactName }} {{ order.contactPhone }}</span>
-                  </div>
-                </div>
-                <div class="detail-row" v-if="order.deliveryMethod">
-                  <div class="detail-item">
-                    <span class="label">配送方式：</span>
-                    <span class="value">{{ order.deliveryMethod }}</span>
-                  </div>
-                  <div class="detail-item" v-if="order.deliveryFee > 0">
-                    <span class="label">配送费用：</span>
-                    <span class="value">¥{{ order.deliveryFee }}</span>
                   </div>
                 </div>
               </div>
@@ -521,17 +536,8 @@
               <!-- 订单操作 -->
               <div class="order-actions">
                 <div class="action-buttons">
-                  <el-button
-                    size="small"
-                    @click="viewEquipmentOrderDetail(order.id)"
-                    class="detail-btn"
-                  >
-                    <i class="el-icon-view"></i>
-                    查看详情
-                  </el-button>
-
-                  <!-- 待审核状态 -->
-                  <template v-if="order.status === 0">
+                  <!-- 申请中状态 -->
+                  <template v-if="order.status === 1">
                     <el-button
                       type="warning"
                       size="small"
@@ -539,35 +545,29 @@
                       :loading="cancelingOrderId === order.id"
                     >
                       <i class="el-icon-close"></i>
-                      取消订单
+                      取消申请
                     </el-button>
                   </template>
 
-                  <!-- 已通过状态 -->
-                  <template v-else-if="order.status === 1">
+                  <!-- 使用中状态 -->
+                  <template v-else-if="order.status === 2">
                     <el-button
                       type="primary"
                       size="small"
-                      @click="handlePayment(order)"
-                      v-if="!order.paid"
-                      :loading="payingOrderId === order.id"
+                      @click="handleEquipmentReturn(order.id)"
+                      :loading="returningOrderId === order.id"
                     >
-                      <i class="el-icon-money"></i>
-                      立即支付
+                      <i class="el-icon-refresh"></i>
+                      申请归还
                     </el-button>
-                    <el-button
-                      type="warning"
-                      size="small"
-                      @click="handleCancel(order.id)"
-                      :loading="cancelingOrderId === order.id"
-                    >
-                      <i class="el-icon-close"></i>
-                      取消订单
+                    <el-button type="info" size="small" @click="handleExtendRental(order.id)">
+                      <i class="el-icon-time"></i>
+                      续租
                     </el-button>
                   </template>
 
-                  <!-- 已完成状态 -->
-                  <template v-else-if="order.status === 4">
+                  <!-- 已归还状态 -->
+                  <template v-else-if="order.status === 3">
                     <el-button type="success" size="small" @click="handleEquipmentReview(order.id)">
                       <i class="el-icon-chat-dot-round"></i>
                       去评价
@@ -579,28 +579,20 @@
                   </template>
 
                   <!-- 已驳回状态 -->
-                  <template v-else-if="order.status === 2">
+                  <template v-else-if="order.status === 4">
                     <el-button type="danger" size="small" @click="handleDelete(order.id)">
                       <i class="el-icon-delete"></i>
                       删除订单
                     </el-button>
-                  </template>
-
-                  <!-- 已取消状态 -->
-                  <template v-else-if="order.status === 3">
                     <el-button type="info" size="small" @click="handleReOrderEquipment(order)">
                       <i class="el-icon-refresh"></i>
-                      重新租赁
-                    </el-button>
-                    <el-button type="danger" size="small" @click="handleDelete(order.id)">
-                      <i class="el-icon-delete"></i>
-                      删除订单
+                      重新申请
                     </el-button>
                   </template>
                 </div>
 
                 <!-- 支付状态 -->
-                <div v-if="order.status === 1" class="payment-status">
+                <div class="payment-status" v-if="order.status === 1 || order.status === 2">
                   <span v-if="order.paid" class="paid">
                     <i class="el-icon-circle-check"></i>
                     已支付
@@ -696,6 +688,54 @@
       </template>
     </el-dialog>
   </div>
+  <div>
+    <!-- 底部信息 -->
+    <footer class="home-footer">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3><i class="el-icon-s-opportunity"></i> 体育场馆综合管理系统</h3>
+          <p>智慧管理 · 便捷预约 · 高效运营</p>
+          <p>为您提供最优质的体育场馆服务体验</p>
+        </div>
+        <div class="footer-section">
+          <h4>服务支持</h4>
+          <ul>
+            <li><el-link :underline="false">使用帮助</el-link></li>
+            <li><el-link :underline="false">常见问题</el-link></li>
+            <li><el-link :underline="false">联系我们</el-link></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>关于我们</h4>
+          <ul>
+            <li><el-link :underline="false">平台介绍</el-link></li>
+            <li><el-link :underline="false">服务条款</el-link></li>
+            <li><el-link :underline="false">隐私政策</el-link></li>
+          </ul>
+        </div>
+      </div>
+      <div class="copyright">
+        © 2025 体育场馆综合管理系统. All rights reserved.
+        <div>
+          <img
+            src="https://beian.mps.gov.cn/web/assets/logo01.6189a29f.png"
+            alt="渝公网安备"
+            style="width: 20px; height: 20px; margin-right: 5px"
+          />
+          <a
+            href="https://beian.mps.gov.cn/#/query/webSearch"
+            target="_blank"
+            style="color: aliceblue"
+          >
+            渝公网安备50024002000227号</a
+          ><span> · </span>
+          <a href="https://beian.miit.gov.cn/" target="_blank" style="color: aliceblue"
+            >渝ICP备2025076592号-4</a
+          >
+        </div>
+      </div>
+    </footer>
+  </div>
 </template>
 
 <script>
@@ -705,6 +745,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import NavBar from '../Home/components/HeaderNav/HeaderNav.vue'
 import { listOrders } from '@/api/order'
+import { returnEquipment } from '@/api/equipment' // 新增这一行
+
 export default {
   name: 'OrderManagementPage',
 
@@ -722,6 +764,13 @@ export default {
 
     // 订单类型：0-场馆订单，1-器材订单
     const orderType = ref(0)
+    const handleReview = (orderId) => {
+      router.push(`/order/review/${orderId}`)
+    }
+
+    const handleEquipmentReview = (orderId) => {
+      router.push(`/order/review/${orderId}`)
+    }
 
     // 搜索和筛选状态
     const searchKeyword = ref('')
@@ -742,6 +791,7 @@ export default {
     // 操作相关
     const cancelingOrderId = ref(null)
     const payingOrderId = ref(null)
+    const returningOrderId = ref(null)
     const showCancelDialog = ref(false)
     const cancelLoading = ref(false)
     const cancelForm = ref({
@@ -756,13 +806,21 @@ export default {
     const equipmentDefaultImage =
       'https://images.unsplash.com/photo-1599065000019-b8dbf6bc9c75?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
 
-    // 订单状态选项
+    // 订单状态选项 - 场馆订单
     const orderStatusOptions = [
       { value: 0, label: '待审核' },
       { value: 1, label: '已通过' },
       { value: 2, label: '已驳回' },
       { value: 3, label: '已取消' },
       { value: 4, label: '已完成' },
+    ]
+
+    // 器材订单状态选项
+    const equipmentStatusOptions = [
+      { value: 1, label: '申请中' },
+      { value: 2, label: '使用中' },
+      { value: 3, label: '已归还' },
+      { value: 4, label: '已驳回' },
     ]
 
     // 计算属性
@@ -775,6 +833,7 @@ export default {
       currentPage.value = 1
       resetFilters()
       loadOrders()
+      loadOrderStats()
     })
 
     // 监听登录状态变化
@@ -814,71 +873,67 @@ export default {
             const createDate = new Date(item.createTime)
 
             return {
-              id: item.orderNo, // 使用orderNo作为id
+              id: item.orderNo,
               orderType: 0,
               orderNumber: item.orderNo,
-              venueId: null, // 后端未提供
+              venueId: null,
               venueName: item.venueName || '未知场馆',
-              venueType: '运动场馆', // 后端未提供类型，使用默认值
-              venueAddress: '地址未知', // 后端未提供地址
+              venueType: '运动场馆',
+              venueAddress: '地址未知',
               venueImage: defaultImage,
-              venuePrice: item.amount, // 使用amount作为场馆价格
-              equipmentFee: 0, // 后端未提供
-              serviceFee: 0, // 后端未提供
-              discount: 0, // 后端未提供
+              venuePrice: item.amount,
+              equipmentFee: 0,
+              serviceFee: 0,
+              discount: 0,
               totalAmount: item.amount,
-              status: item.status, // 直接使用API返回的状态
+              status: item.status,
               createTime: createDate.toLocaleString('zh-CN'),
-              bookingDate: item.date ? item.date.split('T')[0] : '', // 格式化日期
+              bookingDate: item.date ? item.date.split('T')[0] : '',
               timeSlots:
                 item.startTime && item.endTime ? `${item.startTime}-${item.endTime}` : '时间段未知',
               totalHours:
                 item.startTime && item.endTime
                   ? parseInt(item.endTime.split(':')[0]) - parseInt(item.startTime.split(':')[0])
                   : 0,
-              peopleCount: 1, // 默认1人，后端未提供
+              peopleCount: 1,
               notes: '',
-              paid: item.status === 4, // 假设状态4已通过表示已支付
+              paid: item.status === 4,
             }
           })
         } else {
           // 器材订单
           processedOrders = apiOrders.map((item) => {
             const createDate = new Date(item.createTime)
+            const unitPrice = item.count ? item.amount / item.count : item.amount
 
             return {
               id: item.orderNo,
               orderType: 1,
               orderNumber: item.orderNo,
-              // 器材订单不需要venue相关字段
               equipmentItems: [
                 {
                   id: item.orderNo,
                   name: item.equipmentName || '未知器材',
                   spec: '标准规格',
                   image: equipmentDefaultImage,
-                  unitPrice: item.count ? item.amount / item.count : item.amount,
+                  unitPrice: unitPrice,
                   quantity: item.count || 1,
-                  rentalDays: 1, // 后端未提供租赁天数，默认1天
                   totalPrice: item.amount,
                 },
               ],
               equipmentAmount: item.amount,
-              deliveryFee: 0, // 后端未提供
-              deposit: 0, // 后端未提供
-              discount: 0, // 后端未提供
+              deliveryFee: 0,
+              deposit: 0,
+              discount: 0,
               totalAmount: item.amount,
               status: item.status,
               createTime: createDate.toLocaleString('zh-CN'),
-              startDate: '', // 后端未提供
-              endDate: '', // 后端未提供
-              totalDays: 1, // 默认1天
-              deliveryAddress: '地址未知',
+              rentalDays: 1,
+              deliveryAddress: '待补充',
               contactName: '用户',
               contactPhone: '未知',
-              deliveryMethod: '自取',
               notes: '',
-              paid: item.status === 4,
+              paid: item.status !== 1,
             }
           })
         }
@@ -939,13 +994,11 @@ export default {
         loading.value = false
       }
     }
+
     const loadOrderStats = async () => {
       try {
         // 获取两种类型的订单统计
-        const [venueResponse, equipmentResponse] = await Promise.all([
-          listOrders(1), // 场馆订单
-          listOrders(2), // 器材订单
-        ])
+        const [venueResponse, equipmentResponse] = await Promise.all([listOrders(1), listOrders(2)])
 
         const venueOrders = venueResponse.data || []
         const equipmentOrders = equipmentResponse.data || []
@@ -966,19 +1019,12 @@ export default {
         totalOrders.value = currentOrders.length
       } catch (error) {
         console.error('加载订单统计失败:', error)
-
-        // 失败时使用模拟数据
-        const mockVenueOrders = generateMockVenueOrders(25)
-        const mockEquipmentOrders = generateMockEquipmentOrders(15)
-
-        typeStats.value = {
-          0: mockVenueOrders.length,
-          1: mockEquipmentOrders.length,
-        }
-
-        const currentOrders = orderType.value === 0 ? mockVenueOrders : mockEquipmentOrders
-        updateStatusCounts(currentOrders)
-        totalOrders.value = currentOrders.length
+        const counts = {}
+        orders.value.forEach((order) => {
+          counts[order.status] = (counts[order.status] || 0) + 1
+        })
+        statusCounts.value = counts
+        totalOrders.value = orders.value.length
       }
     }
 
@@ -1006,6 +1052,71 @@ export default {
       })
       statusCounts.value = counts
       totalOrders.value = orders.length
+    }
+
+    // 场馆订单状态处理方法
+    const getStatusType = (status) => {
+      const types = {
+        0: 'warning',
+        1: 'primary',
+        2: 'danger',
+        3: 'info',
+        4: 'success',
+      }
+      return types[status] || 'info'
+    }
+
+    const getStatusText = (status) => {
+      const texts = {
+        0: '待审核',
+        1: '已通过',
+        2: '已驳回',
+        3: '已取消',
+        4: '已完成',
+      }
+      return texts[status] || '未知状态'
+    }
+
+    const getStatusClass = (status) => {
+      const classes = {
+        0: 'status-pending',
+        1: 'status-approved',
+        2: 'status-rejected',
+        3: 'status-cancelled',
+        4: 'status-completed',
+      }
+      return classes[status] || ''
+    }
+
+    // 器材订单专用状态处理方法
+    const getEquipmentStatusText = (status) => {
+      const texts = {
+        1: '申请中',
+        2: '使用中',
+        3: '已归还',
+        4: '已驳回',
+      }
+      return texts[status] || '未知状态'
+    }
+
+    const getEquipmentStatusType = (status) => {
+      const types = {
+        1: 'warning',
+        2: 'primary',
+        3: 'success',
+        4: 'danger',
+      }
+      return types[status] || 'info'
+    }
+
+    const getEquipmentStatusClass = (status) => {
+      const classes = {
+        1: 'status-apply',
+        2: 'status-using',
+        3: 'status-returned',
+        4: 'status-rejected',
+      }
+      return classes[status] || ''
     }
 
     const changeOrderType = (type) => {
@@ -1036,28 +1147,6 @@ export default {
       loadOrders()
     }
 
-    const getStatusType = (status) => {
-      const types = {
-        0: 'warning', // 待审核
-        1: 'primary', // 已通过
-        2: 'danger', // 已驳回
-        3: 'info', // 已取消
-        4: 'success', // 已完成
-      }
-      return types[status] || 'info'
-    }
-
-    const getStatusText = (status) => {
-      const texts = {
-        0: '待审核',
-        1: '已通过',
-        2: '已驳回',
-        3: '已取消',
-        4: '已完成',
-      }
-      return texts[status] || '未知状态'
-    }
-
     const formatDateTime = (dateTime) => {
       if (!dateTime) return ''
       const date = new Date(dateTime)
@@ -1078,14 +1167,6 @@ export default {
       const weekDays = ['日', '一', '二', '三', '四', '五', '六']
       const weekDay = weekDays[date.getDay()]
       return `${month}月${day}日 星期${weekDay}`
-    }
-
-    const viewOrderDetail = (orderId) => {
-      router.push(`/order/detail/${orderId}`)
-    }
-
-    const viewEquipmentOrderDetail = (orderId) => {
-      router.push(`/equipment/order/detail/${orderId}`)
     }
 
     const viewVenueDetail = (venueId) => {
@@ -1109,20 +1190,20 @@ export default {
 
       cancelLoading.value = true
       try {
-        // 模拟API调用
         await new Promise((resolve) => setTimeout(resolve, 1000))
 
-        // 更新订单状态
         const orderIndex = orders.value.findIndex((o) => o.id === cancelForm.value.orderId)
         if (orderIndex > -1) {
-          orders.value[orderIndex].status = 3
-          orders.value[orderIndex].statusText = '已取消'
+          if (orderType.value === 0) {
+            orders.value[orderIndex].status = 3
+          } else {
+            orders.value[orderIndex].status = 4
+          }
         }
 
         ElMessage.success('订单已取消')
         showCancelDialog.value = false
 
-        // 重新加载数据
         loadOrders()
         loadOrderStats()
       } catch (error) {
@@ -1134,7 +1215,6 @@ export default {
     }
 
     const handlePayment = (order) => {
-      // 解析时间段
       let startTime = ''
       let endTime = ''
       let totalHours = 0
@@ -1151,7 +1231,6 @@ export default {
         }
       }
 
-      // 将订单信息存储到 sessionStorage
       const paymentData = {
         orderId: order.id,
         orderNo: order.orderNumber,
@@ -1165,26 +1244,53 @@ export default {
         peopleCount: order.peopleCount || 1,
       }
 
-      // 使用 sessionStorage（会话结束后自动清除）
       sessionStorage.setItem('paymentOrderData', JSON.stringify(paymentData))
 
-      // 只传递订单ID作为查询参数
       router.push({
         path: '/OrderPay',
         query: {
-          orderId: order.id, // 只传递订单ID
+          orderId: order.id,
         },
       })
     }
-    // const handleReview = (orderId) => {
-    //   ElMessage.info('跳转到场馆评价页面')
-    //   // router.push(`/review/create/${orderId}`)
-    // }
 
-    // const handleEquipmentReview = (orderId) => {
-    //   ElMessage.info('跳转到器材评价页面')
-    //   // router.push(`/equipment/review/create/${orderId}`)
-    // }
+    const handleEquipmentReturn = (orderId) => {
+      ElMessageBox.confirm('确定要归还器材吗？', '归还确认', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info',
+      })
+        .then(async () => {
+          returningOrderId.value = orderId
+          console.log('归还器材，订单ID：', orderId)
+          try {
+            // 调用后端归还接口：PUT /api/equipment-rentals/{id}/return
+            const res = await returnEquipment(orderId)
+
+            if (res.code === 200) {
+              ElMessage.success('器材归还成功')
+
+              // 重新加载当前列表和统计数据，状态会从“使用中(2)”变为“已归还(3)”
+              await loadOrders()
+              await loadOrderStats()
+            } else {
+              ElMessage.error(res.msg || '归还失败，请重试')
+            }
+          } catch (error) {
+            console.error('归还失败:', error)
+            ElMessage.error('归还失败，请检查网络或稍后再试')
+          } finally {
+            returningOrderId.value = null
+          }
+        })
+        .catch(() => {
+          // 用户点击了取消，不做任何处理
+        })
+    }
+
+    const handleExtendRental = (orderId) => {
+      ElMessage.info('续租功能开发中')
+    }
 
     const handleReOrder = (order) => {
       ElMessage.info('重新预订该场馆')
@@ -1209,15 +1315,11 @@ export default {
         type: 'warning',
       }).then(async () => {
         try {
-          // 模拟API调用
           await new Promise((resolve) => setTimeout(resolve, 800))
 
-          // 从列表中移除
           orders.value = orders.value.filter((o) => o.id !== orderId)
 
           ElMessage.success('订单已删除')
-
-          // 重新加载统计
           loadOrderStats()
         } catch (error) {
           console.error('删除订单失败:', error)
@@ -1247,14 +1349,9 @@ export default {
     }
 
     return {
-      // 用户相关
       isLogin,
       userName,
-
-      // 订单类型
       orderType,
-
-      // 搜索和筛选
       searchKeyword,
       selectedStatus,
       dateRange,
@@ -1264,28 +1361,22 @@ export default {
       currentPage,
       pageSize,
       total,
-
-      // 统计相关
       totalOrders,
       statusCounts,
       typeStats,
-
-      // 操作相关
       cancelingOrderId,
       payingOrderId,
+      returningOrderId,
       showCancelDialog,
       cancelLoading,
       cancelForm,
-
-      // 常量
       defaultImage,
       equipmentDefaultImage,
       orderStatusOptions,
-
-      // 计算属性
+      equipmentStatusOptions,
       hasFilters,
-
-      // 方法
+      handleReview,
+      handleEquipmentReview,
       changeOrderType,
       handleSearch,
       resetFilters,
@@ -1293,16 +1384,18 @@ export default {
       handleCurrentChange,
       getStatusType,
       getStatusText,
+      getStatusClass,
+      getEquipmentStatusText,
+      getEquipmentStatusType,
+      getEquipmentStatusClass,
       formatDateTime,
       formatDate,
-      viewOrderDetail,
-      viewEquipmentOrderDetail,
       viewVenueDetail,
       handleCancel,
       confirmCancel,
       handlePayment,
-      // handleReview,
-      // handleEquipmentReview,
+      handleEquipmentReturn,
+      handleExtendRental,
       handleReOrder,
       handleReOrderEquipment,
       handleDelete,
@@ -1633,14 +1726,26 @@ export default {
   gap: 25px;
 }
 
+// 修复：搜索框首次加载缩小问题
 .search-input-group {
+  width: 100%;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
   :deep(.el-input) {
+    width: 100%;
+
     .el-input__wrapper {
+      width: 100%;
       border-radius: 12px;
       border: 2px solid #e2e8f0;
       padding: 8px 15px;
       background: #f8fafc;
-      transition: all 0.3s ease;
+      transition:
+        border-color 0.3s ease,
+        box-shadow 0.3s ease,
+        background-color 0.3s ease;
+      box-sizing: border-box;
 
       &:hover {
         border-color: #cbd5e1;
@@ -1666,11 +1771,13 @@ export default {
   }
 }
 
+// 修复：选择框居中
 .filter-group {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
   align-items: center;
+  justify-content: center;
 
   @media (max-width: 768px) {
     flex-direction: column;
@@ -1681,11 +1788,14 @@ export default {
     display: flex;
     align-items: center;
     gap: 10px;
-    flex: 1;
+    flex: 0 0 auto;
+    min-width: 240px;
 
     @media (max-width: 768px) {
       flex-direction: column;
       align-items: stretch;
+      width: 100%;
+      min-width: unset;
 
       .filter-label {
         width: 100%;
@@ -1698,12 +1808,13 @@ export default {
       color: #64748b;
       font-weight: 500;
       white-space: nowrap;
+      flex-shrink: 0;
     }
 
     :deep(.el-select),
     :deep(.el-date-editor) {
       flex: 1;
-      min-width: 180px;
+      min-width: 150px;
 
       @media (max-width: 768px) {
         width: 100%;
@@ -1713,6 +1824,7 @@ export default {
 
   .reset-btn {
     white-space: nowrap;
+    flex-shrink: 0;
 
     @media (max-width: 768px) {
       width: 100%;
@@ -1885,16 +1997,12 @@ export default {
 
 // 场馆订单内容
 .order-content {
-  display: flex;
   padding: 25px;
-
-  @media (max-width: 992px) {
-    flex-direction: column;
-    gap: 20px;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
 
   .venue-info {
-    flex: 1;
     display: flex;
     gap: 20px;
 
@@ -1992,76 +2100,109 @@ export default {
     }
   }
 
-  .order-actions {
-    flex: 0 0 250px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: space-between;
+  // 场馆订单详情部分 - 与器材订单保持一致
+  .order-details {
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 25px 0;
 
-    @media (max-width: 992px) {
-      flex: none;
-      flex-direction: row;
-      align-items: center;
-      width: 100%;
+    .details-content {
+      margin-bottom: 20px;
+
+      .detail-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-bottom: 15px;
+
+        @media (max-width: 768px) {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+
+        .detail-item {
+          .label {
+            color: #64748b;
+            font-size: 14px;
+            margin-right: 8px;
+          }
+
+          .value {
+            color: #1e293b;
+            font-size: 14px;
+            font-weight: 500;
+
+            &.status-value {
+              font-weight: 600;
+
+              &.status-pending {
+                color: #f59e0b;
+              }
+
+              &.status-approved {
+                color: #10b981;
+              }
+
+              &.status-rejected {
+                color: #ef4444;
+              }
+
+              &.status-cancelled {
+                color: #94a3b8;
+              }
+
+              &.status-completed {
+                color: #667eea;
+              }
+            }
+          }
+        }
+      }
     }
 
-    .action-buttons {
+    // 场馆订单操作部分 - 与器材订单保持一致
+    .order-actions {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
-      width: 100%;
-
-      @media (max-width: 992px) {
-        flex-direction: row;
-        flex-wrap: wrap;
-      }
+      justify-content: space-between;
+      align-items: center;
 
       @media (max-width: 576px) {
         flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
       }
 
-      :deep(.el-button) {
-        width: 100%;
-        justify-content: center;
-
-        @media (max-width: 992px) {
-          flex: 1;
-          min-width: 120px;
-        }
+      .action-buttons {
+        display: flex;
+        gap: 10px;
 
         @media (max-width: 576px) {
-          width: 100%;
+          flex-direction: column;
         }
 
-        i {
-          margin-right: 6px;
+        :deep(.el-button) {
+          i {
+            margin-right: 6px;
+          }
         }
       }
-    }
 
-    .payment-status {
-      text-align: center;
-      width: 100%;
-      padding: 8px 0;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 500;
+      .payment-status {
+        .paid {
+          color: #10b981;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-weight: 500;
+        }
 
-      .paid {
-        color: #10b981;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-      }
-
-      .unpaid {
-        color: #f59e0b;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
+        .unpaid {
+          color: #f59e0b;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-weight: 500;
+        }
       }
     }
   }
@@ -2202,11 +2343,32 @@ export default {
           color: #1e293b;
           font-size: 14px;
           font-weight: 500;
+
+          &.status-value {
+            font-weight: 600;
+
+            &.status-apply {
+              color: #f59e0b;
+            }
+
+            &.status-using {
+              color: #3b82f6;
+            }
+
+            &.status-returned {
+              color: #10b981;
+            }
+
+            &.status-rejected {
+              color: #ef4444;
+            }
+          }
         }
       }
     }
   }
 
+  // 器材订单操作部分
   .order-actions {
     display: flex;
     justify-content: space-between;
@@ -2376,7 +2538,8 @@ export default {
   .order-header,
   .order-footer,
   .equipment-item,
-  .rental-details {
+  .rental-details,
+  .order-details {
     background: #0f172a;
     border-color: #334155;
   }
@@ -2439,6 +2602,128 @@ export default {
 
   .discount {
     color: #10b981 !important;
+  }
+
+  .status-pending,
+  .status-apply {
+    color: #fbbf24 !important;
+  }
+
+  .status-approved,
+  .status-using {
+    color: #60a5fa !important;
+  }
+
+  .status-completed,
+  .status-returned {
+    color: #34d399 !important;
+  }
+
+  .status-rejected {
+    color: #f87171 !important;
+  }
+
+  .status-cancelled {
+    color: #94a3b8 !important;
+  }
+}
+</style>
+
+<style lang="scss" scoped>
+.home-footer {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: white;
+  padding: 60px 20px 30px;
+  margin-top: 80px;
+
+  .footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 40px;
+
+    .footer-section {
+      h3 {
+        color: #4facfe;
+        margin-bottom: 15px;
+        font-size: 1.3rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        i {
+          font-size: 1.5rem;
+        }
+      }
+
+      h4 {
+        color: #4facfe;
+        margin-bottom: 20px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        position: relative;
+        padding-bottom: 10px;
+
+        &::after {
+          content: '';
+          position: absolute;
+          left: 0;
+          bottom: 0;
+          width: 40px;
+          height: 3px;
+          background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+          border-radius: 2px;
+        }
+      }
+
+      p {
+        color: #cbd5e1;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+        line-height: 1.6;
+
+        &:first-of-type {
+          color: #94a3b8;
+          font-weight: 500;
+        }
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+
+        li {
+          margin-bottom: 12px;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          .el-link {
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+
+            &:hover {
+              color: #4facfe;
+              padding-left: 5px;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .copyright {
+    max-width: 1200px;
+    margin: 50px auto 0;
+    padding-top: 30px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.9rem;
   }
 }
 </style>

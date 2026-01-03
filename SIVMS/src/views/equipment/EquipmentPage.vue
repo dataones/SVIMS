@@ -36,9 +36,9 @@
           <p class="page-subtitle">选择您需要的运动器材，轻松租赁</p>
         </div>
         <div class="header-right">
-          <el-button type="info" size="large" @click="viewMyOrders">
+          <el-button type="info" size="large" @click="viewMyRentals">
             <i class="el-icon-shopping-cart-2"></i>
-            我的器材订单
+            我的借用记录
           </el-button>
         </div>
       </div>
@@ -61,26 +61,6 @@
           </div>
 
           <div class="filter-group">
-            <!-- 器材分类筛选 -->
-            <div class="filter-item">
-              <span class="filter-label">器材分类：</span>
-              <el-select
-                v-model="selectedCategory"
-                placeholder="所有分类"
-                size="large"
-                clearable
-                @change="handleSearch"
-              >
-                <el-option label="所有分类" value="" />
-                <el-option
-                  v-for="category in equipmentCategories"
-                  :key="category.value"
-                  :label="category.label"
-                  :value="category.value"
-                />
-              </el-select>
-            </div>
-
             <!-- 价格筛选 -->
             <div class="filter-item">
               <span class="filter-label">价格区间：</span>
@@ -100,20 +80,19 @@
               </el-select>
             </div>
 
-            <!-- 状态筛选 -->
+            <!-- 状态筛选（按库存状态） -->
             <div class="filter-item">
-              <span class="filter-label">器材状态：</span>
+              <span class="filter-label">库存状态：</span>
               <el-select
-                v-model="selectedStatus"
-                placeholder="全部状态"
+                v-model="selectedStockStatus"
+                placeholder="库存状态"
                 size="large"
                 clearable
                 @change="handleSearch"
               >
-                <el-option label="全部状态" value="" />
-                <el-option label="可租赁" :value="1" />
-                <el-option label="已租出" :value="0" />
-                <el-option label="维修中" :value="2" />
+                <el-option label="全部" value="" />
+                <el-option label="有库存" :value="1" />
+                <el-option label="无库存" :value="0" />
               </el-select>
             </div>
 
@@ -128,8 +107,8 @@
               >
                 <el-option label="价格从低到高" value="price_asc" />
                 <el-option label="价格从高到低" value="price_desc" />
-                <el-option label="热门程度" value="popular" />
-                <el-option label="新品优先" value="new" />
+                <el-option label="库存从多到少" value="stock_desc" />
+                <el-option label="最新添加" value="new" />
               </el-select>
             </div>
 
@@ -164,11 +143,11 @@
           </div>
           <div class="process-step">
             <div class="step-icon">
-              <i class="el-icon-date"></i>
+              <i class="el-icon-document"></i>
             </div>
             <div class="step-info">
-              <div class="step-title">填写租赁信息</div>
-              <div class="step-desc">选择租赁时间和数量</div>
+              <div class="step-title">提交申请</div>
+              <div class="step-desc">填写数量提交借用申请</div>
             </div>
           </div>
           <div class="process-arrow">
@@ -176,23 +155,11 @@
           </div>
           <div class="process-step">
             <div class="step-icon">
-              <i class="el-icon-money"></i>
+              <i class="el-icon-circle-check"></i>
             </div>
             <div class="step-info">
-              <div class="step-title">支付订单</div>
-              <div class="step-desc">在线支付租赁费用</div>
-            </div>
-          </div>
-          <div class="process-arrow">
-            <i class="el-icon-arrow-right"></i>
-          </div>
-          <div class="process-step">
-            <div class="step-icon">
-              <i class="el-icon-truck"></i>
-            </div>
-            <div class="step-info">
-              <div class="step-title">收货使用</div>
-              <div class="step-desc">送货上门或自取使用</div>
+              <div class="step-title">等待审核</div>
+              <div class="step-desc">管理员审核通过后使用</div>
             </div>
           </div>
         </div>
@@ -222,15 +189,10 @@
             <!-- 器材图片 -->
             <div class="equipment-image" @click="viewEquipmentDetail(equipment)">
               <img :src="equipment.image || defaultImage" :alt="equipment.name" />
-              <div class="equipment-status" :class="getStatusClass(equipment.status)">
-                {{ getStatusText(equipment.status) }}
+              <div class="equipment-status" :class="getStatusClass(equipment)">
+                {{ getStatusText(equipment) }}
               </div>
-              <div class="equipment-category">{{ equipment.category }}</div>
-              <div v-if="equipment.hot" class="hot-badge">
-                <i class="el-icon-fire"></i>
-                热门
-              </div>
-              <div v-if="equipment.new" class="new-badge">新品</div>
+              <div class="available-stock">可用：{{ getAvailableStock(equipment) }}件</div>
             </div>
 
             <!-- 器材信息 -->
@@ -239,137 +201,75 @@
                 <h3 class="equipment-name" @click="viewEquipmentDetail(equipment)">
                   {{ equipment.name }}
                 </h3>
-                <div class="equipment-rating">
-                  <span class="stars">★★★★★</span>
-                  <span class="rating-value">{{ equipment.rating || '4.5' }}</span>
-                  <span class="review-count">({{ equipment.reviewCount || '45' }})</span>
+                <div class="equipment-price-tag">
+                  <span class="price-value">¥{{ equipment.price }}</span>
+                  <span class="price-unit">/个</span>
                 </div>
               </div>
 
               <div class="equipment-spec">
-                <div class="spec-item">
+                <div class="spec-item" v-if="equipment.specification">
                   <i class="el-icon-s-grid"></i>
-                  <span>规格：{{ equipment.spec || '标准规格' }}</span>
+                  <span>规格：{{ equipment.specification }}</span>
                 </div>
-                <div class="spec-item">
+                <div class="spec-item" v-if="equipment.brand">
                   <i class="el-icon-medal"></i>
-                  <span>品牌：{{ equipment.brand || '知名品牌' }}</span>
+                  <span>品牌：{{ equipment.brand }}</span>
                 </div>
                 <div class="spec-item">
                   <i class="el-icon-box"></i>
-                  <span>库存：{{ equipment.stock || 0 }}件</span>
+                  <span>总库存：{{ equipment.totalStock }}件</span>
+                </div>
+                <div class="spec-item">
+                  <i class="el-icon-shopping-cart-2"></i>
+                  <span>已租出：{{ equipment.rentedStock }}件</span>
                 </div>
               </div>
 
-              <p class="equipment-description">
-                {{ equipment.description || '专业运动器材，质量可靠，使用舒适' }}
+              <p class="equipment-update-time">
+                <i class="el-icon-time"></i>
+                更新时间：{{ formatDateTime(equipment.updateTime) }}
               </p>
-
-              <div class="equipment-features">
-                <span
-                  v-for="(feature, index) in getFeatures(equipment)"
-                  :key="index"
-                  class="feature-tag"
-                >
-                  {{ feature }}
-                </span>
-              </div>
             </div>
 
             <!-- 租赁区域 -->
             <div class="rental-action">
-              <div class="price-info">
-                <div class="current-price">
-                  <span class="price-label">¥</span>
-                  <span class="price-value">{{ equipment.price || '20' }}</span>
-                  <span class="price-unit">/天</span>
-                </div>
-                <div v-if="equipment.originalPrice" class="original-price">
-                  ¥{{ equipment.originalPrice }}
-                </div>
-                <div class="deposit-info" v-if="equipment.deposit > 0">
-                  <i class="el-icon-money"></i>
-                  押金：¥{{ equipment.deposit }}
-                </div>
-              </div>
-
               <!-- 租赁数量选择 -->
-              <div class="quantity-selector" v-if="equipment.status === 1">
-                <div class="quantity-label">租赁数量：</div>
+              <div class="quantity-selector" v-if="getAvailableStock(equipment) > 0">
+                <div class="quantity-label">借用数量：</div>
                 <el-input-number
                   v-model="equipment.rentalQuantity"
                   :min="1"
-                  :max="equipment.maxRental || equipment.stock || 5"
+                  :max="getAvailableStock(equipment)"
                   size="large"
-                  @change="updateCart"
                 />
-                <div class="stock-info">最多可租{{ equipment.maxRental || equipment.stock || 5 }}件</div>
-              </div>
-
-              <!-- 租赁天数选择 -->
-              <div class="days-selector" v-if="equipment.status === 1">
-                <div class="days-label">租赁天数：</div>
-                <div class="days-options">
-                  <span
-                    v-for="days in [1, 3, 7, 14]"
-                    :key="days"
-                    class="days-option"
-                    :class="{ active: equipment.rentalDays === days }"
-                    @click="selectRentalDays(equipment, days)"
-                  >
-                    {{ days }}天
-                  </span>
-                </div>
+                <div class="stock-info">最多可借{{ getAvailableStock(equipment) }}件</div>
               </div>
 
               <!-- 操作按钮 -->
               <div class="action-buttons">
                 <el-button
-                  type="info"
-                  size="large"
-                  @click="viewEquipmentDetail(equipment)"
-                  class="detail-btn"
-                >
-                  <i class="el-icon-view"></i>
-                  查看详情
-                </el-button>
-
-                <el-button
-                  type="success"
-                  size="large"
-                  @click="addToCart(equipment)"
-                  :disabled="equipment.status !== 1 || equipment.rentalQuantity <= 0"
-                  class="cart-btn"
-                >
-                  <i class="el-icon-shopping-cart-2"></i>
-                  加入租赁车
-                </el-button>
-
-                <el-button
                   type="primary"
                   size="large"
                   @click="rentNow(equipment)"
-                  :disabled="equipment.status !== 1"
+                  :disabled="getAvailableStock(equipment) === 0"
                   class="rent-btn"
+                  :loading="rentingEquipmentId === equipment.id"
                 >
                   <i class="el-icon-box"></i>
-                  立即租赁
+                  {{ getAvailableStock(equipment) > 0 ? '立即借用' : '暂无库存' }}
                 </el-button>
               </div>
 
               <!-- 快速租赁提示 -->
-              <div class="quick-rental-tips" v-if="equipment.status === 1">
+              <div class="quick-rental-tips" v-if="getAvailableStock(equipment) > 0">
                 <div class="tips-item">
                   <i class="el-icon-circle-check"></i>
-                  <span>支持送货上门</span>
+                  <span>支持自取使用</span>
                 </div>
                 <div class="tips-item">
                   <i class="el-icon-circle-check"></i>
-                  <span>免费配送范围5公里内</span>
-                </div>
-                <div class="tips-item">
-                  <i class="el-icon-circle-check"></i>
-                  <span>租赁满7天享9折优惠</span>
+                  <span>申请后等待管理员审核</span>
                 </div>
               </div>
             </div>
@@ -390,222 +290,116 @@
         </div>
       </div>
 
-      <!-- 租赁车侧边栏 -->
-      <div class="rental-cart-sidebar" :class="{ open: showCart }">
-        <div class="cart-header">
-          <h3>
-            <i class="el-icon-shopping-cart-2"></i>
-            租赁车
-            <span class="cart-count">({{ cartItems.length }})</span>
-          </h3>
-          <el-button type="text" @click="closeCart">
-            <i class="el-icon-close"></i>
-          </el-button>
+      <!-- 借用确认对话框 -->
+      <el-dialog
+        v-model="showRentDialog"
+        :title="`借用确认 - ${selectedEquipment?.name || ''}`"
+        width="500px"
+        append-to-body
+      >
+        <div v-if="selectedEquipment" class="rent-dialog">
+          <div class="equipment-info-summary">
+            <div class="equipment-image">
+              <img :src="selectedEquipment.image || defaultImage" :alt="selectedEquipment.name" />
+            </div>
+            <div class="equipment-details">
+              <h3>{{ selectedEquipment.name }}</h3>
+              <div class="equipment-spec" v-if="selectedEquipment.specification">
+                {{ selectedEquipment.specification }}
+              </div>
+              <div class="equipment-brand" v-if="selectedEquipment.brand">
+                {{ selectedEquipment.brand }}
+              </div>
+              <div class="equipment-price">¥{{ selectedEquipment.price }}/个</div>
+            </div>
+          </div>
+
+          <div class="rent-info">
+            <div class="info-item">
+              <span class="label">借用数量：</span>
+              <span class="value">{{ rentForm.quantity }}件</span>
+            </div>
+            <div class="info-item">
+              <span class="label">可用库存：</span>
+              <span class="value">{{ getAvailableStock(selectedEquipment) }}件</span>
+            </div>
+            <div class="info-item">
+              <span class="label">预计费用：</span>
+              <span class="value">¥{{ calculateTotalCost() }}</span>
+            </div>
+          </div>
+
+          <div class="rent-notice">
+            <div class="notice-header">
+              <i class="el-icon-warning-outline"></i>
+              <span>借用须知</span>
+            </div>
+            <div class="notice-content">
+              <p>1. 借用申请需要管理员审核通过后才能使用</p>
+              <p>2. 请妥善保管借用器材，如有损坏需照价赔偿</p>
+              <p>3. 使用完毕后请及时归还，方便其他用户使用</p>
+              <p>4. 具体使用规则请遵守场馆管理规定</p>
+            </div>
+          </div>
         </div>
-
-        <div class="cart-content" v-if="cartItems.length > 0">
-          <div class="cart-items">
-            <div v-for="item in cartItems" :key="item.id" class="cart-item">
-              <div class="item-image">
-                <img :src="item.image" :alt="item.name" />
-              </div>
-              <div class="item-info">
-                <div class="item-name">{{ item.name }}</div>
-                <div class="item-spec">{{ item.spec }}</div>
-                <div class="item-details">
-                  <span>¥{{ item.price }}/天 × {{ item.quantity }}件</span>
-                  <span>共{{ item.days }}天</span>
-                </div>
-              </div>
-              <div class="item-actions">
-                <div class="item-price">¥{{ item.totalPrice }}</div>
-                <el-button type="text" @click="removeFromCart(item.id)">
-                  <i class="el-icon-delete"></i>
-                </el-button>
-              </div>
-            </div>
-          </div>
-
-          <div class="cart-summary">
-            <div class="summary-item">
-              <span>器材费用：</span>
-              <span>¥{{ cartEquipmentTotal }}</span>
-            </div>
-            <div class="summary-item">
-              <span>配送费用：</span>
-              <span>¥{{ cartDeliveryFee }}</span>
-            </div>
-            <div class="summary-item discount" v-if="cartDiscount > 0">
-              <span>优惠减免：</span>
-              <span>-¥{{ cartDiscount }}</span>
-            </div>
-            <div class="summary-item total">
-              <span>合计：</span>
-              <span class="total-amount">¥{{ cartTotal }}</span>
-            </div>
-          </div>
-
-          <div class="cart-actions">
-            <el-button type="info" @click="clearCart" class="clear-btn">
-              <i class="el-icon-delete"></i>
-              清空租赁车
+        <template #footer>
+          <span class="dialog-footer">
+            <el-button @click="showRentDialog = false">取消</el-button>
+            <el-button type="primary" @click="confirmRent" :loading="rentLoading">
+              确认借用
             </el-button>
-            <el-button type="primary" @click="goToCheckout" class="checkout-btn">
-              <i class="el-icon-shopping-cart-2"></i>
-              去结算
-            </el-button>
-          </div>
-        </div>
-
-        <div class="cart-empty" v-else>
-          <div class="empty-icon">
-            <i class="el-icon-box"></i>
-          </div>
-          <p>租赁车为空</p>
-          <p class="empty-hint">快去选择心仪的器材吧</p>
-        </div>
-      </div>
-
-      <!-- 租赁车悬浮按钮 -->
-      <div class="cart-float-button" @click="toggleCart">
-        <i class="el-icon-shopping-cart-2"></i>
-        <span class="cart-badge" v-if="cartItems.length > 0">{{ cartItems.length }}</span>
-      </div>
+          </span>
+        </template>
+      </el-dialog>
     </div>
-
-    <!-- 立即租赁对话框 -->
-    <el-dialog
-      v-model="showRentDialog"
-      :title="`租赁 - ${selectedEquipment?.name || ''}`"
-      width="600px"
-      append-to-body
-    >
-      <div v-if="selectedEquipment" class="rent-dialog">
-        <div class="equipment-info-summary">
-          <div class="equipment-image">
-            <img :src="selectedEquipment.image || defaultImage" :alt="selectedEquipment.name" />
-          </div>
-          <div class="equipment-details">
-            <h3>{{ selectedEquipment.name }}</h3>
-            <div class="equipment-spec">{{ selectedEquipment.spec || '标准规格' }}</div>
-            <div class="equipment-price">¥{{ selectedEquipment.price }}/天</div>
-          </div>
+  </div>
+  <div>
+    <!-- 底部信息 -->
+    <footer class="home-footer">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3><i class="el-icon-s-opportunity"></i> 体育场馆综合管理系统</h3>
+          <p>智慧管理 · 便捷预约 · 高效运营</p>
+          <p>为您提供最优质的体育场馆服务体验</p>
         </div>
-
-        <el-form :model="rentForm" label-width="100px">
-          <el-form-item label="租赁数量：">
-            <el-input-number
-              v-model="rentForm.quantity"
-              :min="1"
-              :max="selectedEquipment.maxRental || selectedEquipment.stock || 5"
-              size="large"
-            />
-            <span class="form-hint">最多可租{{ selectedEquipment.maxRental || selectedEquipment.stock || 5 }}件</span>
-          </el-form-item>
-
-          <el-form-item label="租赁天数：">
-            <el-input-number
-              v-model="rentForm.days"
-              :min="1"
-              :max="30"
-              size="large"
-            />
-            <span class="form-hint">最长可租30天</span>
-          </el-form-item>
-
-          <el-form-item label="租赁日期：">
-            <el-date-picker
-              v-model="rentForm.dateRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              size="large"
-              value-format="YYYY-MM-DD"
-              :disabled-date="disabledDate"
-            />
-          </el-form-item>
-
-          <el-form-item label="配送方式：">
-            <el-radio-group v-model="rentForm.deliveryMethod">
-              <el-radio label="delivery">送货上门 (¥15)</el-radio>
-              <el-radio label="pickup">自取</el-radio>
-            </el-radio-group>
-          </el-form-item>
-
-          <el-form-item label="收货地址：" v-if="rentForm.deliveryMethod === 'delivery'">
-            <el-input
-              v-model="rentForm.address"
-              placeholder="请输入详细收货地址"
-              size="large"
-            />
-          </el-form-item>
-
-          <el-form-item label="联系人：">
-            <el-input
-              v-model="rentForm.contactName"
-              placeholder="请输入联系人姓名"
-              size="large"
-              class="contact-input"
-            />
-          </el-form-item>
-
-          <el-form-item label="联系电话：">
-            <el-input
-              v-model="rentForm.contactPhone"
-              placeholder="请输入联系电话"
-              size="large"
-              class="contact-input"
-            />
-          </el-form-item>
-
-          <el-form-item label="备注信息：">
-            <el-input
-              v-model="rentForm.notes"
-              type="textarea"
-              placeholder="请输入特殊需求或其他备注"
-              :rows="3"
-              maxlength="200"
-              show-word-limit
-            />
-          </el-form-item>
-
-          <div class="rent-summary">
-            <div class="summary-header">费用明细</div>
-            <div class="summary-content">
-              <div class="summary-item">
-                <span>器材费用：</span>
-                <span>¥{{ calculateEquipmentCost() }}</span>
-              </div>
-              <div class="summary-item" v-if="rentForm.deliveryMethod === 'delivery'">
-                <span>配送费用：</span>
-                <span>¥15</span>
-              </div>
-              <div class="summary-item" v-if="selectedEquipment.deposit > 0">
-                <span>押金：</span>
-                <span>¥{{ selectedEquipment.deposit * rentForm.quantity }}</span>
-              </div>
-              <div class="summary-item discount" v-if="rentForm.days >= 7">
-                <span>长期租赁优惠：</span>
-                <span>-¥{{ calculateDiscount() }}</span>
-              </div>
-              <div class="summary-item total">
-                <span>应付总额：</span>
-                <span class="total-amount">¥{{ calculateTotalCost() }}</span>
-              </div>
-            </div>
-          </div>
-        </el-form>
+        <div class="footer-section">
+          <h4>服务支持</h4>
+          <ul>
+            <li><el-link :underline="false">使用帮助</el-link></li>
+            <li><el-link :underline="false">常见问题</el-link></li>
+            <li><el-link :underline="false">联系我们</el-link></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>关于我们</h4>
+          <ul>
+            <li><el-link :underline="false">平台介绍</el-link></li>
+            <li><el-link :underline="false">服务条款</el-link></li>
+            <li><el-link :underline="false">隐私政策</el-link></li>
+          </ul>
+        </div>
       </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showRentDialog = false">取消</el-button>
-          <el-button type="primary" @click="confirmRent" :loading="rentLoading">
-            确认租赁
-          </el-button>
-        </span>
-      </template>
-    </el-dialog>
+      <div class="copyright">
+        © 2025 体育场馆综合管理系统. All rights reserved.
+        <div>
+          <img
+            src="https://beian.mps.gov.cn/web/assets/logo01.6189a29f.png"
+            alt="渝公网安备"
+            style="width: 20px; height: 20px; margin-right: 5px"
+          />
+          <a
+            href="https://beian.mps.gov.cn/#/query/webSearch"
+            target="_blank"
+            style="color: aliceblue"
+          >
+            渝公网安备50024002000227号</a
+          ><span> · </span>
+          <a href="https://beian.miit.gov.cn/" target="_blank" style="color: aliceblue"
+            >渝ICP备2025076592号-5</a
+          >
+        </div>
+      </div>
+    </footer>
   </div>
 </template>
 
@@ -614,6 +408,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { fetchEquipments, applyRental } from '@/api/equipment'
 import NavBar from '../Home/components/HeaderNav/HeaderNav.vue'
 
 export default {
@@ -633,9 +428,8 @@ export default {
 
     // 搜索和筛选状态
     const searchKeyword = ref('')
-    const selectedCategory = ref('')
     const selectedPriceRange = ref('')
-    const selectedStatus = ref('')
+    const selectedStockStatus = ref('')
     const sortField = ref('price_asc')
     const equipmentList = ref([])
     const filteredEquipment = ref([])
@@ -644,76 +438,36 @@ export default {
     const pageSize = ref(12)
     const total = ref(0)
 
-    // 租赁车相关
-    const cartItems = ref([])
-    const showCart = ref(false)
-
-    // 租赁对话框相关
+    // 借用相关
     const showRentDialog = ref(false)
     const rentLoading = ref(false)
+    const rentingEquipmentId = ref(null)
     const selectedEquipment = ref(null)
     const rentForm = ref({
       quantity: 1,
-      days: 1,
-      dateRange: [],
-      deliveryMethod: 'delivery',
-      address: '',
-      contactName: userStore.name || '',
-      contactPhone: '',
-      notes: ''
     })
 
     // 默认图片
-    const defaultImage = 'https://images.unsplash.com/photo-1599065000019-b8dbf6bc9c75?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
-
-    // 器材分类选项
-    const equipmentCategories = [
-      { value: 'ball', label: '球类器材' },
-      { value: 'racket', label: '球拍类' },
-      { value: 'fitness', label: '健身器材' },
-      { value: 'swimming', label: '游泳装备' },
-      { value: 'outdoor', label: '户外装备' },
-      { value: 'other', label: '其他器材' }
-    ]
+    const defaultImage =
+      'https://images.unsplash.com/photo-1599065000019-b8dbf6bc9c75?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
 
     // 价格区间选项
     const priceRanges = [
-      { value: '0-20', label: '¥0-20' },
+      { value: '0-10', label: '¥0-10' },
+      { value: '10-20', label: '¥10-20' },
       { value: '20-50', label: '¥20-50' },
-      { value: '50-100', label: '¥50-100' },
-      { value: '100+', label: '¥100以上' }
+      { value: '50+', label: '¥50以上' },
     ]
 
     // 计算属性
     const hasFilters = computed(() => {
-      return searchKeyword.value || selectedCategory.value ||
-             selectedPriceRange.value || selectedStatus.value !== ''
-    })
-
-    // 租赁车相关计算属性
-    const cartEquipmentTotal = computed(() => {
-      return cartItems.value.reduce((sum, item) => sum + item.totalPrice, 0)
-    })
-
-    const cartDeliveryFee = computed(() => {
-      return cartItems.value.some(item => item.deliveryMethod === 'delivery') ? 15 : 0
-    })
-
-    const cartDiscount = computed(() => {
-      // 计算优惠：租赁满7天享9折
-      const eligibleItems = cartItems.value.filter(item => item.days >= 7)
-      return eligibleItems.reduce((sum, item) => sum + (item.totalPrice * 0.1), 0)
-    })
-
-    const cartTotal = computed(() => {
-      return cartEquipmentTotal.value + cartDeliveryFee.value - cartDiscount.value
+      return searchKeyword.value || selectedPriceRange.value || selectedStockStatus.value !== ''
     })
 
     // 监听登录状态变化
     watch(isLogin, (newVal) => {
       if (newVal) {
         loadEquipment()
-        loadCartFromStorage()
       }
     })
 
@@ -721,7 +475,6 @@ export default {
     onMounted(() => {
       if (isLogin.value) {
         loadEquipment()
-        loadCartFromStorage()
       }
     })
 
@@ -731,157 +484,91 @@ export default {
 
       loading.value = true
       try {
-        // 模拟API调用
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // 调用后端API获取器材列表
+        // 建议传入参数，例如 { pageNum: 1, pageSize: 100 } 以获取足够多的数据
+        // 如果不传，默认只返回第一页的10条
+        const response = await fetchEquipments({ pageNum: 1, pageSize: 100 })
 
-        // 生成模拟数据
-        const mockEquipment = generateMockEquipment(30)
+        if (response.code === 200) {
+          // =========== 修改开始 ===========
+          // 之前是: const apiData = response.data || []
+          // 修改为: 取 response.data.records
+          const apiData = response.data.records || []
+          // =========== 修改结束 ===========
 
-        // 应用筛选
-        let filtered = mockEquipment
+          // 初始化租赁数量为1，并添加可用库存计算
+          const processedData = apiData.map((equipment) => ({
+            ...equipment,
+            rentalQuantity: 1,
+            availableStock: equipment.totalStock - equipment.rentedStock,
+          }))
 
-        // 关键词搜索
-        if (searchKeyword.value) {
-          const keyword = searchKeyword.value.toLowerCase()
-          filtered = filtered.filter(item =>
-            item.name.toLowerCase().includes(keyword) ||
-            item.description.toLowerCase().includes(keyword)
-          )
+          equipmentList.value = processedData
+
+          // 应用筛选和排序
+          applyFiltersAndSorting()
+        } else {
+          ElMessage.error(response.msg || '加载器材列表失败')
+          equipmentList.value = []
         }
-
-        // 分类筛选
-        if (selectedCategory.value) {
-          filtered = filtered.filter(item => item.category === selectedCategory.value)
-        }
-
-        // 价格筛选
-        if (selectedPriceRange.value) {
-          filtered = filterByPrice(filtered, selectedPriceRange.value)
-        }
-
-        // 状态筛选
-        if (selectedStatus.value !== '') {
-          filtered = filtered.filter(item => item.status === parseInt(selectedStatus.value))
-        }
-
-        // 排序
-        filtered = sortEquipment(filtered, sortField.value)
-
-        // 初始化租赁数量（确保每个器材都有rentalQuantity属性）
-        filtered = filtered.map(item => ({
-          ...item,
-          rentalQuantity: item.rentalQuantity || 1,
-          rentalDays: item.rentalDays || 1
-        }))
-
-        // 分页
-        const startIndex = (currentPage.value - 1) * pageSize.value
-        const endIndex = startIndex + pageSize.value
-        filteredEquipment.value = filtered.slice(startIndex, endIndex)
-        equipmentList.value = filtered
-        total.value = filtered.length
-
       } catch (error) {
         console.error('加载器材失败:', error)
         ElMessage.error('加载器材列表失败')
+        equipmentList.value = []
       } finally {
         loading.value = false
       }
     }
 
-    const generateMockEquipment = (count) => {
-      const equipment = []
-      const categories = ['ball', 'racket', 'fitness', 'swimming', 'outdoor', 'other']
-      const categoryNames = {
-        'ball': '球类器材',
-        'racket': '球拍类',
-        'fitness': '健身器材',
-        'swimming': '游泳装备',
-        'outdoor': '户外装备',
-        'other': '其他器材'
+    const applyFiltersAndSorting = () => {
+      let filtered = [...equipmentList.value]
+
+      // 关键词搜索
+      if (searchKeyword.value) {
+        const keyword = searchKeyword.value.toLowerCase()
+        filtered = filtered.filter((item) => item.name.toLowerCase().includes(keyword))
       }
 
-      const brands = ['耐克', '阿迪达斯', '李宁', '威尔胜', '斯伯丁', '尤尼克斯']
-      const ballItems = ['篮球', '足球', '排球', '网球', '羽毛球', '乒乓球']
-      const racketItems = ['网球拍', '羽毛球拍', '乒乓球拍']
-      const fitnessItems = ['瑜伽垫', '哑铃', '跳绳', '拉力器']
-      const swimmingItems = ['游泳镜', '游泳帽', '浮板']
-      const outdoorItems = ['帐篷', '睡袋', '登山杖']
+      // 价格筛选
+      if (selectedPriceRange.value) {
+        filtered = filterByPrice(filtered, selectedPriceRange.value)
+      }
 
-      for (let i = 1; i <= count; i++) {
-        const category = categories[Math.floor(Math.random() * categories.length)]
-        let name = ''
-        let spec = ''
-
-        switch (category) {
-          case 'ball':
-            name = ballItems[Math.floor(Math.random() * ballItems.length)]
-            spec = ['标准7号球', '5号球', '成人标准', '儿童专用'][Math.floor(Math.random() * 4)]
-            break
-          case 'racket':
-            name = racketItems[Math.floor(Math.random() * racketItems.length)]
-            spec = ['碳纤维专业级', '铝合金入门级', '全碳素专业版'][Math.floor(Math.random() * 3)]
-            break
-          case 'fitness':
-            name = fitnessItems[Math.floor(Math.random() * fitnessItems.length)]
-            spec = ['加厚防滑', '10公斤', '专业级'][Math.floor(Math.random() * 3)]
-            break
-          case 'swimming':
-            name = swimmingItems[Math.floor(Math.random() * swimmingItems.length)]
-            spec = ['防雾高清', '硅胶材质', '专业训练'][Math.floor(Math.random() * 3)]
-            break
-          case 'outdoor':
-            name = outdoorItems[Math.floor(Math.random() * outdoorItems.length)]
-            spec = ['双人帐篷', '羽绒睡袋', '碳纤维'][Math.floor(Math.random() * 3)]
-            break
-          default:
-            name = '运动器材'
-            spec = '标准规格'
+      // 库存状态筛选
+      if (selectedStockStatus.value !== '') {
+        if (selectedStockStatus.value === 1) {
+          // 有库存
+          filtered = filtered.filter((item) => item.availableStock > 0)
+        } else {
+          // 无库存
+          filtered = filtered.filter((item) => item.availableStock === 0)
         }
-
-        const price = Math.floor(Math.random() * 80) + 10
-        const originalPrice = Math.random() > 0.7 ? Math.floor(price * 1.3) : 0
-        const stock = Math.floor(Math.random() * 20) + 5
-        const status = Math.random() > 0.2 ? 1 : (Math.random() > 0.5 ? 0 : 2)
-
-        equipment.push({
-          id: i,
-          name: `${brands[Math.floor(Math.random() * brands.length)]} ${name}`,
-          category: category,
-          categoryName: categoryNames[category],
-          spec: spec,
-          brand: brands[Math.floor(Math.random() * brands.length)],
-          price: price,
-          originalPrice: originalPrice,
-          deposit: Math.random() > 0.5 ? Math.floor(price * 3) : 0,
-          stock: stock,
-          maxRental: Math.min(stock, 5),
-          status: status,
-          image: defaultImage,
-          description: `${name}，${spec}，专业运动器材，质量可靠`,
-          rating: (4 + Math.random()).toFixed(1),
-          reviewCount: Math.floor(Math.random() * 100),
-          hot: Math.random() > 0.7,
-          new: i <= 5, // 前5个作为新品
-          features: ['专业品质', '使用舒适', '耐用性强', '保养方便'].slice(0, Math.floor(Math.random() * 4) + 1)
-        })
       }
 
-      return equipment
+      // 排序
+      filtered = sortEquipment(filtered, sortField.value)
+
+      // 更新总数
+      total.value = filtered.length
+
+      // 分页
+      const startIndex = (currentPage.value - 1) * pageSize.value
+      const endIndex = startIndex + pageSize.value
+      filteredEquipment.value = filtered.slice(startIndex, endIndex)
     }
 
     const filterByPrice = (equipment, range) => {
-      return equipment.filter(item => {
+      return equipment.filter((item) => {
         const price = item.price || 0
         switch (range) {
-          case '0-20':
-            return price <= 20
+          case '0-10':
+            return price <= 10
+          case '10-20':
+            return price > 10 && price <= 20
           case '20-50':
             return price > 20 && price <= 50
-          case '50-100':
-            return price > 50 && price <= 100
-          case '100+':
-            return price > 100
+          case '50+':
+            return price > 50
           default:
             return true
         }
@@ -895,10 +582,10 @@ export default {
             return a.price - b.price
           case 'price_desc':
             return b.price - a.price
-          case 'popular':
-            return (b.rating * b.reviewCount) - (a.rating * a.reviewCount)
+          case 'stock_desc':
+            return b.availableStock - a.availableStock
           case 'new':
-            return b.new - a.new
+            return new Date(b.createTime) - new Date(a.createTime)
           default:
             return 0
         }
@@ -907,262 +594,136 @@ export default {
 
     const handleSearch = () => {
       currentPage.value = 1
-      loadEquipment()
+      applyFiltersAndSorting()
     }
 
     const resetFilters = () => {
       searchKeyword.value = ''
-      selectedCategory.value = ''
       selectedPriceRange.value = ''
-      selectedStatus.value = ''
+      selectedStockStatus.value = ''
       sortField.value = 'price_asc'
       currentPage.value = 1
-      loadEquipment()
+      applyFiltersAndSorting()
     }
 
     const handleSizeChange = (size) => {
       pageSize.value = size
       currentPage.value = 1
-      loadEquipment()
+      applyFiltersAndSorting()
     }
 
     const handleCurrentChange = (page) => {
       currentPage.value = page
-      loadEquipment()
+      applyFiltersAndSorting()
     }
 
-    const getStatusClass = (status) => {
-      const classes = {
-        0: 'rented',     // 已租出
-        1: 'available',  // 可租赁
-        2: 'maintenance' // 维修中
-      }
-      return classes[status] || 'available'
+    const getAvailableStock = (equipment) => {
+      return equipment.totalStock - equipment.rentedStock
     }
 
-    const getStatusText = (status) => {
-      const texts = {
-        0: '已租出',
-        1: '可租赁',
-        2: '维修中'
-      }
-      return texts[status] || '未知状态'
+    const getStatusClass = (equipment) => {
+      const availableStock = getAvailableStock(equipment)
+      return availableStock > 0 ? 'available' : 'unavailable'
     }
 
-    const getFeatures = (equipment) => {
-      return equipment.features || ['专业品质', '使用舒适']
+    const getStatusText = (equipment) => {
+      const availableStock = getAvailableStock(equipment)
+      return availableStock > 0 ? '可借用' : '已借完'
     }
 
-    const selectRentalDays = (equipment, days) => {
-      equipment.rentalDays = days
-      updateCart()
-    }
-
-    const updateCart = () => {
-      // 更新租赁车中的器材数量信息
-      saveCartToStorage()
-    }
-
-    const addToCart = (equipment) => {
-      if (equipment.rentalQuantity <= 0) {
-        ElMessage.warning('请选择租赁数量')
-        return
-      }
-
-      const existingItem = cartItems.value.find(item => item.id === equipment.id)
-      if (existingItem) {
-        // 更新现有项的数量
-        existingItem.quantity = equipment.rentalQuantity
-        existingItem.days = equipment.rentalDays
-        existingItem.totalPrice = existingItem.price * existingItem.quantity * existingItem.days
-        ElMessage.success('已更新租赁车中的器材')
-      } else {
-        // 添加新项
-        cartItems.value.push({
-          id: equipment.id,
-          name: equipment.name,
-          spec: equipment.spec,
-          image: equipment.image || defaultImage,
-          price: equipment.price,
-          quantity: equipment.rentalQuantity,
-          days: equipment.rentalDays,
-          totalPrice: equipment.price * equipment.rentalQuantity * equipment.rentalDays,
-          deliveryMethod: 'delivery'
-        })
-        ElMessage.success('已添加到租赁车')
-      }
-
-      saveCartToStorage()
-      showCart.value = true
-    }
-
-    const removeFromCart = (itemId) => {
-      cartItems.value = cartItems.value.filter(item => item.id !== itemId)
-      saveCartToStorage()
-      ElMessage.success('已从租赁车移除')
-    }
-
-    const clearCart = () => {
-      ElMessageBox.confirm(
-        '确定要清空租赁车吗？',
-        '清空租赁车',
-        {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }
-      ).then(() => {
-        cartItems.value = []
-        saveCartToStorage()
-        ElMessage.success('租赁车已清空')
+    const formatDateTime = (dateTime) => {
+      if (!dateTime) return ''
+      const date = new Date(dateTime)
+      return date.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
       })
     }
 
-    const saveCartToStorage = () => {
-      localStorage.setItem('equipmentCart', JSON.stringify(cartItems.value))
-    }
-
-    const loadCartFromStorage = () => {
-      const savedCart = localStorage.getItem('equipmentCart')
-      if (savedCart) {
-        cartItems.value = JSON.parse(savedCart)
-      }
-    }
-
-    const toggleCart = () => {
-      showCart.value = !showCart.value
-    }
-
-    const closeCart = () => {
-      showCart.value = false
-    }
-
-    const goToCheckout = () => {
-      if (cartItems.value.length === 0) {
-        ElMessage.warning('租赁车为空')
-        return
-      }
-      router.push('/equipment/checkout')
-    }
-
     const viewEquipmentDetail = (equipment) => {
-      // 跳转到器材详情页
-      router.push(`/equipment/detail/${equipment.id}`)
+      // 这里可以跳转到器材详情页，暂时先显示一个信息框
+      ElMessageBox.alert(
+        `<div style="padding: 10px;">
+          <h3 style="margin-bottom: 10px;">${equipment.name}</h3>
+          <p><strong>价格：</strong>¥${equipment.price}/个</p>
+          <p><strong>总库存：</strong>${equipment.totalStock}件</p>
+          <p><strong>已租出：</strong>${equipment.rentedStock}件</p>
+          <p><strong>可用数量：</strong>${getAvailableStock(equipment)}件</p>
+          ${equipment.specification ? `<p><strong>规格：</strong>${equipment.specification}</p>` : ''}
+          ${equipment.brand ? `<p><strong>品牌：</strong>${equipment.brand}</p>` : ''}
+          <p><strong>更新时间：</strong>${formatDateTime(equipment.updateTime)}</p>
+        </div>`,
+        '器材详情',
+        {
+          dangerouslyUseHTMLString: true,
+          confirmButtonText: '确定',
+        },
+      )
     }
 
     const rentNow = (equipment) => {
+      if (getAvailableStock(equipment) === 0) {
+        ElMessage.warning('该器材暂无库存')
+        return
+      }
+
       selectedEquipment.value = equipment
       rentForm.value = {
         quantity: equipment.rentalQuantity || 1,
-        days: equipment.rentalDays || 1,
-        dateRange: [],
-        deliveryMethod: 'delivery',
-        address: '',
-        contactName: userStore.name || '',
-        contactPhone: '',
-        notes: ''
       }
       showRentDialog.value = true
     }
 
-    const disabledDate = (time) => {
-      // 禁用今天之前的日期
-      return time.getTime() < Date.now() - 24 * 60 * 60 * 1000
-    }
-
-    const calculateEquipmentCost = () => {
-      if (!selectedEquipment.value) return 0
-      return selectedEquipment.value.price * rentForm.value.quantity * rentForm.value.days
-    }
-
-    const calculateDiscount = () => {
-      if (!selectedEquipment.value) return 0
-      if (rentForm.value.days >= 7) {
-        return calculateEquipmentCost() * 0.1
-      }
-      return 0
-    }
-
     const calculateTotalCost = () => {
-      let total = calculateEquipmentCost()
-      if (rentForm.value.deliveryMethod === 'delivery') {
-        total += 15
-      }
-      if (selectedEquipment.value?.deposit) {
-        total += selectedEquipment.value.deposit * rentForm.value.quantity
-      }
-      total -= calculateDiscount()
-      return total
+      if (!selectedEquipment.value) return 0
+      return selectedEquipment.value.price * rentForm.value.quantity
     }
 
     const confirmRent = async () => {
-      // 表单验证
+      if (!selectedEquipment.value) return
+
+      // 验证借用数量
       if (rentForm.value.quantity <= 0) {
-        ElMessage.warning('请选择租赁数量')
+        ElMessage.warning('请选择借用数量')
         return
       }
-      if (rentForm.value.days <= 0) {
-        ElMessage.warning('请选择租赁天数')
-        return
-      }
-      if (!rentForm.value.dateRange || rentForm.value.dateRange.length !== 2) {
-        ElMessage.warning('请选择租赁日期')
-        return
-      }
-      if (rentForm.value.deliveryMethod === 'delivery' && !rentForm.value.address) {
-        ElMessage.warning('请输入收货地址')
-        return
-      }
-      if (!rentForm.value.contactName) {
-        ElMessage.warning('请输入联系人姓名')
-        return
-      }
-      if (!rentForm.value.contactPhone) {
-        ElMessage.warning('请输入联系电话')
+
+      const availableStock = getAvailableStock(selectedEquipment.value)
+      if (rentForm.value.quantity > availableStock) {
+        ElMessage.warning(`借用数量不能超过可用库存（${availableStock}件）`)
         return
       }
 
       rentLoading.value = true
+      rentingEquipmentId.value = selectedEquipment.value.id
+
       try {
-        // 模拟API调用
-        await new Promise(resolve => setTimeout(resolve, 1500))
+        // 调用后端API提交借用申请
+        const response = await applyRental(selectedEquipment.value.id, rentForm.value.quantity)
 
-        // 创建订单
-        const orderData = {
-          equipmentId: selectedEquipment.value.id,
-          equipmentName: selectedEquipment.value.name,
-          quantity: rentForm.value.quantity,
-          days: rentForm.value.days,
-          startDate: rentForm.value.dateRange[0],
-          endDate: rentForm.value.dateRange[1],
-          deliveryMethod: rentForm.value.deliveryMethod,
-          address: rentForm.value.address,
-          contactName: rentForm.value.contactName,
-          contactPhone: rentForm.value.contactPhone,
-          notes: rentForm.value.notes,
-          totalAmount: calculateTotalCost()
+        if (response.code === 200) {
+          ElMessage.success('借用申请已提交，请等待管理员审核')
+          showRentDialog.value = false
+
+          // 重新加载器材列表，更新库存信息
+          loadEquipment()
+        } else {
+          ElMessage.error(response.msg || '提交借用申请失败')
         }
-
-        // 跳转到支付页面
-        ElMessage.success('创建订单成功，跳转到支付页面')
-        showRentDialog.value = false
-
-        // 这里可以跳转到支付页面
-        // router.push({
-        //   path: '/equipment/payment',
-        //   query: orderData
-        // })
-
       } catch (error) {
-        console.error('租赁失败:', error)
-        ElMessage.error('租赁失败，请重试')
+        console.error('借用失败:', error)
+        ElMessage.error('提交失败，请重试')
       } finally {
         rentLoading.value = false
+        rentingEquipmentId.value = null
       }
     }
 
-    const viewMyOrders = () => {
-      router.push('/order/management')
+    const viewMyRentals = () => {
+      router.push('/equipment/rentals/my')
     }
 
     const goToLogin = () => {
@@ -1180,9 +741,8 @@ export default {
 
       // 搜索和筛选
       searchKeyword,
-      selectedCategory,
       selectedPriceRange,
-      selectedStatus,
+      selectedStockStatus,
       sortField,
       equipmentList,
       filteredEquipment,
@@ -1191,57 +751,38 @@ export default {
       pageSize,
       total,
       defaultImage,
-      equipmentCategories,
       priceRanges,
 
-      // 租赁车相关
-      cartItems,
-      showCart,
-
-      // 租赁对话框相关
+      // 借用相关
       showRentDialog,
       rentLoading,
+      rentingEquipmentId,
       selectedEquipment,
       rentForm,
 
       // 计算属性
       hasFilters,
-      cartEquipmentTotal,
-      cartDeliveryFee,
-      cartDiscount,
-      cartTotal,
 
       // 方法
       handleSearch,
       resetFilters,
       handleSizeChange,
       handleCurrentChange,
+      getAvailableStock,
       getStatusClass,
       getStatusText,
-      getFeatures,
-      selectRentalDays,
-      updateCart,
-      addToCart,
-      removeFromCart,
-      clearCart,
-      toggleCart,
-      closeCart,
-      goToCheckout,
+      formatDateTime,
       viewEquipmentDetail,
       rentNow,
-      disabledDate,
-      calculateEquipmentCost,
-      calculateDiscount,
       calculateTotalCost,
       confirmRent,
-      viewMyOrders,
+      viewMyRentals,
       goToLogin,
-      goToRegister
+      goToRegister,
     }
-  }
+  },
 }
 </script>
-
 <style scoped lang="scss">
 .equipment-rental-page {
   min-height: 100vh;
@@ -1390,14 +931,26 @@ export default {
   gap: 25px;
 }
 
+// 修复：搜索框首次加载缩小问题
 .search-input-group {
+  width: 100%;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
   :deep(.el-input) {
+    width: 100%;
+
     .el-input__wrapper {
+      width: 100%;
       border-radius: 12px;
       border: 2px solid #e2e8f0;
       padding: 8px 15px;
       background: #f8fafc;
-      transition: all 0.3s ease;
+      box-sizing: border-box;
+      transition:
+        border-color 0.3s ease,
+        box-shadow 0.3s ease,
+        background-color 0.3s ease;
 
       &:hover {
         border-color: #cbd5e1;
@@ -1423,11 +976,13 @@ export default {
   }
 }
 
+// 修复：选择框居中
 .filter-group {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
   align-items: center;
+  justify-content: center;
 
   @media (max-width: 768px) {
     flex-direction: column;
@@ -1438,11 +993,14 @@ export default {
     display: flex;
     align-items: center;
     gap: 10px;
-    flex: 1;
+    flex: 0 0 auto;
+    min-width: 240px;
 
     @media (max-width: 768px) {
       flex-direction: column;
       align-items: stretch;
+      width: 100%;
+      min-width: unset;
 
       .filter-label {
         width: 100%;
@@ -1455,11 +1013,12 @@ export default {
       color: #64748b;
       font-weight: 500;
       white-space: nowrap;
+      flex-shrink: 0;
     }
 
     :deep(.el-select) {
       flex: 1;
-      min-width: 180px;
+      min-width: 150px;
 
       @media (max-width: 768px) {
         width: 100%;
@@ -1469,6 +1028,7 @@ export default {
 
   .reset-btn {
     white-space: nowrap;
+    flex-shrink: 0;
 
     @media (max-width: 768px) {
       width: 100%;
@@ -1680,52 +1240,21 @@ export default {
       background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     }
 
-    &.rented {
+    &.unavailable {
       background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    }
-
-    &.maintenance {
-      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
     }
   }
 
-  .equipment-category {
+  .available-stock {
     position: absolute;
     bottom: 15px;
-    left: 15px;
+    right: 15px;
     padding: 6px 12px;
     background: rgba(0, 0, 0, 0.7);
     color: white;
     border-radius: 6px;
     font-size: 12px;
     font-weight: 500;
-  }
-
-  .hot-badge {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    padding: 6px 12px;
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    color: white;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .new-badge {
-    position: absolute;
-    top: 50px;
-    right: 15px;
-    padding: 6px 12px;
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    color: white;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
   }
 }
 
@@ -1753,26 +1282,18 @@ export default {
     }
   }
 
-  .equipment-rating {
-    display: flex;
-    align-items: center;
-    gap: 4px;
+  .equipment-price-tag {
+    text-align: right;
 
-    .stars {
+    .price-value {
+      font-size: 24px;
+      font-weight: 700;
       color: #f59e0b;
-      font-size: 14px;
     }
 
-    .rating-value {
+    .price-unit {
       font-size: 14px;
-      font-weight: 600;
-      color: #1e293b;
-      margin-left: 4px;
-    }
-
-    .review-count {
-      font-size: 12px;
-      color: #64748b;
+      color: #94a3b8;
     }
   }
 }
@@ -1797,28 +1318,16 @@ export default {
   }
 }
 
-.equipment-description {
-  font-size: 14px;
-  color: #64748b;
-  line-height: 1.5;
-  margin: 0 0 15px 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.equipment-features {
+.equipment-update-time {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
 
-  .feature-tag {
-    background: #f1f5f9;
-    color: #475569;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 12px;
+  i {
+    font-size: 14px;
   }
 }
 
@@ -1826,57 +1335,10 @@ export default {
   padding: 20px;
 }
 
-.price-info {
-  display: flex;
-  align-items: center;
-  gap: 15px;
+.quantity-selector {
   margin-bottom: 20px;
 
-  .current-price {
-    display: flex;
-    align-items: baseline;
-
-    .price-label {
-      font-size: 16px;
-      color: #ef4444;
-      font-weight: 600;
-    }
-
-    .price-value {
-      font-size: 24px;
-      color: #ef4444;
-      font-weight: 700;
-      margin: 0 2px;
-    }
-
-    .price-unit {
-      font-size: 14px;
-      color: #94a3b8;
-    }
-  }
-
-  .original-price {
-    font-size: 16px;
-    color: #94a3b8;
-    text-decoration: line-through;
-  }
-
-  .deposit-info {
-    margin-left: auto;
-    font-size: 14px;
-    color: #64748b;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-}
-
-.quantity-selector,
-.days-selector {
-  margin-bottom: 20px;
-
-  .quantity-label,
-  .days-label {
+  .quantity-label {
     font-size: 14px;
     font-weight: 500;
     color: #1e293b;
@@ -1894,43 +1356,11 @@ export default {
   width: 120px;
 }
 
-.days-options {
-  display: flex;
-  gap: 10px;
-
-  .days-option {
-    padding: 8px 16px;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    color: #64748b;
-    transition: all 0.2s ease;
-
-    &:hover {
-      border-color: #f59e0b;
-      color: #f59e0b;
-    }
-
-    &.active {
-      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-      border-color: transparent;
-      color: white;
-    }
-  }
-}
-
 .action-buttons {
-  display: flex;
-  gap: 10px;
   margin-bottom: 15px;
 
-  @media (max-width: 480px) {
-    flex-direction: column;
-  }
-
   :deep(.el-button) {
-    flex: 1;
+    width: 100%;
     justify-content: center;
 
     i {
@@ -1972,272 +1402,18 @@ export default {
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
 }
 
-// 租赁车侧边栏
-.rental-cart-sidebar {
-  position: fixed;
-  top: 0;
-  right: -400px;
-  width: 380px;
-  height: 100vh;
-  background: white;
-  box-shadow: -5px 0 20px rgba(0, 0, 0, 0.1);
-  transition: right 0.3s ease;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-
-  &.open {
-    right: 0;
-  }
-
-  @media (max-width: 480px) {
-    width: 100%;
-  }
-}
-
-.cart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #e2e8f0;
-
-  h3 {
-    font-size: 20px;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    .cart-count {
-      color: #f59e0b;
-      font-weight: 700;
-    }
-  }
-}
-
-.cart-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-}
-
-.cart-items {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.cart-item {
-  display: flex;
-  gap: 15px;
-  padding: 15px;
-  background: #f8fafc;
-  border-radius: 12px;
-  margin-bottom: 12px;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-
-  .item-image {
-    flex: 0 0 60px;
-    height: 60px;
-    border-radius: 8px;
-    overflow: hidden;
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-  }
-
-  .item-info {
-    flex: 1;
-    min-width: 0;
-
-    .item-name {
-      font-size: 14px;
-      font-weight: 600;
-      color: #1e293b;
-      margin-bottom: 4px;
-    }
-
-    .item-spec {
-      font-size: 12px;
-      color: #64748b;
-      margin-bottom: 8px;
-    }
-
-    .item-details {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      color: #64748b;
-    }
-  }
-
-  .item-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: space-between;
-
-    .item-price {
-      font-size: 16px;
-      font-weight: 700;
-      color: #f59e0b;
-    }
-  }
-}
-
-.cart-summary {
-  margin-top: 20px;
-  padding: 20px;
-  background: #f8fafc;
-  border-radius: 12px;
-
-  .summary-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-
-    &.total {
-      padding-top: 12px;
-      border-top: 2px solid #e2e8f0;
-
-      .total-amount {
-        font-size: 20px;
-        font-weight: 700;
-        color: #f59e0b;
-      }
-    }
-
-    &.discount {
-      span:last-child {
-        color: #10b981;
-        font-weight: 600;
-      }
-    }
-  }
-}
-
-.cart-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-
-  .clear-btn,
-  .checkout-btn {
-    flex: 1;
-    justify-content: center;
-
-    i {
-      margin-right: 6px;
-    }
-  }
-}
-
-.cart-empty {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-
-  .empty-icon {
-    width: 80px;
-    height: 80px;
-    background: #f1f5f9;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 20px;
-
-    i {
-      font-size: 40px;
-      color: #94a3b8;
-    }
-  }
-
-  p {
-    color: #64748b;
-    font-size: 16px;
-    margin: 0 0 8px 0;
-
-    &.empty-hint {
-      font-size: 14px;
-    }
-  }
-}
-
-// 租赁车悬浮按钮
-.cart-float-button {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4);
-  transition: all 0.3s ease;
-  z-index: 999;
-
-  &:hover {
-    transform: scale(1.1);
-    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.6);
-  }
-
-  i {
-    font-size: 24px;
-    color: white;
-  }
-
-  .cart-badge {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    width: 24px;
-    height: 24px;
-    background: #ef4444;
-    color: white;
-    border-radius: 50%;
-    font-size: 12px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-}
-
-// 立即租赁对话框
+// 借用确认对话框
 .rent-dialog {
   .equipment-info-summary {
     display: flex;
     gap: 20px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     padding-bottom: 20px;
     border-bottom: 1px solid #e2e8f0;
 
     .equipment-image {
-      flex: 0 0 100px;
-      height: 100px;
+      flex: 0 0 80px;
+      height: 80px;
       border-radius: 12px;
       overflow: hidden;
 
@@ -2252,79 +1428,87 @@ export default {
       flex: 1;
 
       h3 {
-        font-size: 20px;
+        font-size: 18px;
         font-weight: 700;
         color: #1e293b;
         margin: 0 0 8px 0;
       }
 
-      .equipment-spec {
+      .equipment-spec,
+      .equipment-brand {
         font-size: 14px;
         color: #64748b;
-        margin-bottom: 12px;
+        margin-bottom: 4px;
       }
 
       .equipment-price {
-        font-size: 24px;
+        font-size: 20px;
         font-weight: 700;
         color: #f59e0b;
       }
     }
   }
 
-  .form-hint {
-    margin-left: 10px;
-    font-size: 14px;
-    color: #64748b;
+  .rent-info {
+    margin-bottom: 20px;
+
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 8px 0;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .label {
+        font-size: 14px;
+        color: #64748b;
+      }
+
+      .value {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+
+        &:last-child {
+          color: #f59e0b;
+        }
+      }
+    }
   }
 
-  .contact-input {
-    width: 200px;
-  }
-
-  .rent-summary {
-    margin-top: 20px;
+  .rent-notice {
     background: #f8fafc;
-    border-radius: 12px;
-    overflow: hidden;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #e2e8f0;
 
-    .summary-header {
-      background: #e2e8f0;
-      padding: 15px 20px;
-      font-size: 16px;
+    .notice-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 14px;
       font-weight: 600;
-      color: #1e293b;
+      color: #f59e0b;
+
+      i {
+        font-size: 16px;
+      }
     }
 
-    .summary-content {
-      padding: 20px;
-
-      .summary-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
+    .notice-content {
+      p {
+        font-size: 13px;
+        color: #64748b;
+        margin: 0 0 8px 0;
+        line-height: 1.4;
 
         &:last-child {
           margin-bottom: 0;
-        }
-
-        &.total {
-          padding-top: 15px;
-          border-top: 2px solid #e2e8f0;
-
-          .total-amount {
-            font-size: 24px;
-            font-weight: 700;
-            color: #f59e0b;
-          }
-        }
-
-        &.discount {
-          span:last-child {
-            color: #10b981;
-            font-weight: 600;
-          }
         }
       }
     }
@@ -2333,8 +1517,12 @@ export default {
 
 // 动画
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 // 暗色主题支持
@@ -2348,22 +1536,9 @@ export default {
   .rental-process,
   .equipment-item,
   .empty-state,
-  .pagination-section,
-  .rental-cart-sidebar {
+  .pagination-section {
     background: #1e293b;
     border: 1px solid #334155;
-  }
-
-  .cart-header {
-    background: #0f172a;
-    border-color: #334155;
-  }
-
-  .cart-content,
-  .cart-summary,
-  .cart-item,
-  .rent-summary {
-    background: #0f172a;
   }
 
   .equipment-info,
@@ -2374,12 +1549,9 @@ export default {
   .page-title,
   .step-title,
   .equipment-name,
-  .equipment-rating .rating-value,
-  .summary-item span:last-child:not(.discount),
-  .item-name,
-  .cart-header h3,
-  .summary-header,
-  .rent-summary .summary-item span:first-child {
+  .info-item .value:not(:last-child),
+  .notice-header,
+  h3 {
     color: #f1f5f9;
   }
 
@@ -2387,15 +1559,14 @@ export default {
   .step-desc,
   .filter-label,
   .equipment-spec,
-  .equipment-description,
+  .equipment-update-time,
   .stock-info,
-  .days-option,
   .tips-item,
-  .item-spec,
-  .item-details,
-  .cart-empty p,
   .form-hint,
-  .equipment-details .equipment-spec {
+  .equipment-details .equipment-spec,
+  .equipment-details .equipment-brand,
+  .info-item .label,
+  .notice-content p {
     color: #94a3b8;
   }
 
@@ -2409,22 +1580,123 @@ export default {
     }
   }
 
-  .feature-tag {
-    background: #334155;
-    color: #cbd5e1;
+  .equipment-price-tag .price-value,
+  .equipment-price,
+  .info-item .value:last-child {
+    color: #f59e0b !important;
   }
 
   .equipment-status.available {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   }
 
-  .price-info .current-price,
-  .price-info .price-label,
-  .price-info .price-value,
-  .item-price,
-  .total-amount,
-  .equipment-price {
-    color: #f59e0b !important;
+  .equipment-status.unavailable {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  }
+
+  .quick-rental-tips,
+  .rent-notice {
+    background: #0f172a;
+    border-color: #334155;
+  }
+}
+</style>
+
+<style lang="scss" scoped>
+.home-footer {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: white;
+  padding: 60px 20px 30px;
+  margin-top: 80px;
+
+  .footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 40px;
+
+    .footer-section {
+      h3 {
+        color: #4facfe;
+        margin-bottom: 15px;
+        font-size: 1.3rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        i {
+          font-size: 1.5rem;
+        }
+      }
+
+      h4 {
+        color: #4facfe;
+        margin-bottom: 20px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        position: relative;
+        padding-bottom: 10px;
+
+        &::after {
+          content: '';
+          position: absolute;
+          left: 0;
+          bottom: 0;
+          width: 40px;
+          height: 3px;
+          background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+          border-radius: 2px;
+        }
+      }
+
+      p {
+        color: #cbd5e1;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+        line-height: 1.6;
+
+        &:first-of-type {
+          color: #94a3b8;
+          font-weight: 500;
+        }
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+
+        li {
+          margin-bottom: 12px;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          .el-link {
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+
+            &:hover {
+              color: #4facfe;
+              padding-left: 5px;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .copyright {
+    max-width: 1200px;
+    margin: 50px auto 0;
+    padding-top: 30px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.9rem;
   }
 }
 </style>
