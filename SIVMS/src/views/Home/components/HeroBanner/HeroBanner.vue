@@ -1,6 +1,11 @@
 <template>
   <div class="hero-banner">
+    <div v-if="loading" class="banner-loading">
+      <div class="loading-spinner"></div>
+      <p>加载轮播图中...</p>
+    </div>
     <el-carousel
+      v-else
       :interval="interval"
       :autoplay="autoplay"
       height="400px"
@@ -9,7 +14,11 @@
     >
       <el-carousel-item v-for="banner in banners" :key="banner.id">
         <div class="banner-item" @click="handleClick(banner)">
-          <img :src="banner.image" :alt="banner.title" class="banner-image" />
+          <img
+            :src="banner.image_url || banner.imageUrl || banner.image"
+            :alt="banner.title"
+            class="banner-image"
+          />
           <div class="banner-content">
             <h3 class="banner-title">{{ banner.title }}</h3>
             <p class="banner-description">{{ banner.description }}</p>
@@ -29,16 +38,20 @@ export default {
   props: {
     banners: {
       type: Array,
-      default: () => []
+      default: () => [],
+    },
+    loading: {
+      type: Boolean,
+      default: false,
     },
     autoplay: {
       type: Boolean,
-      default: true
+      default: true,
     },
     interval: {
       type: Number,
-      default: 5000
-    }
+      default: 5000,
+    },
   },
   emits: ['banner-click'],
   setup(props, { emit }) {
@@ -47,15 +60,51 @@ export default {
     }
 
     return {
-      handleClick
+      handleClick,
     }
-  }
+  },
 }
 </script>
 
 <style lang="scss" scoped>
 .hero-banner {
   position: relative;
+
+  .banner-loading {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 400px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    color: white;
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    p {
+      font-size: 16px;
+      margin: 0;
+      opacity: 0.9;
+    }
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
 
   :deep(.el-carousel) {
     .el-carousel__container {

@@ -42,20 +42,11 @@
         <div class="user-stats">
           <div class="stat-item">
             <div class="stat-icon">
-              <i class="el-icon-shopping-cart-2"></i>
+              <ShoppingCart />
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ userBookingsCount || 0 }}</div>
               <div class="stat-label">历史预订</div>
-            </div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-icon">
-              <i class="el-icon-star"></i>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ userFavoritesCount || 0 }}</div>
-              <div class="stat-label">收藏场馆</div>
             </div>
           </div>
         </div>
@@ -142,10 +133,16 @@
             <!-- 场馆图片 -->
             <div class="venue-image" @click="viewVenueDetail(venue)">
               <img :src="venue.image || defaultImage" :alt="venue.name" />
-              <div class="venue-status" :class="getStatusClass(venue.status)">
+              <div
+                class="venue-status"
+                :class="getStatusClass(venue.status)"
+                :style="getStatusStyle(venue.status)"
+              >
                 {{ getStatusText(venue.status) }}
               </div>
-              <div class="venue-type">{{ venue.type }}</div>
+              <div class="venue-type" :style="getTypeStyle()">
+                {{ venue.type || '综合场馆' }}
+              </div>
             </div>
 
             <!-- 场馆信息 -->
@@ -156,8 +153,8 @@
                 </h3>
                 <div class="venue-rating">
                   <span class="stars">★★★★★</span>
-                  <span class="rating-value">{{ venue.rating || '4.5' }}</span>
-                  <span class="review-count">({{ venue.reviewCount || '128' }})</span>
+                  <span class="rating-value">{{ getVenueRating(venue) }}</span>
+                  <span class="review-count">({{ getVenueReviewCount(venue) }})</span>
                 </div>
               </div>
 
@@ -229,21 +226,6 @@
                   立即预订
                 </el-button>
               </div>
-
-              <!-- 快速预订时间 -->
-              <div class="quick-booking" v-if="venue.status === 1">
-                <div class="quick-title">快速预订：</div>
-                <div class="time-slots">
-                  <span
-                    v-for="slot in getQuickTimeSlots()"
-                    :key="slot"
-                    class="time-slot"
-                    @click="quickBook(venue, slot)"
-                  >
-                    {{ slot }}
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -314,18 +296,24 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { User, ShoppingCart } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import NavBar from '../Home/components/HeaderNav/HeaderNav.vue'
 import { fetchVenues } from '@/api/venue'
+import { getUserStats } from '@/api/user'
+import { getMyBookings } from '@/api/booking'
+import { getVenueReviewStats } from '@/api/review'
 
 export default {
   name: 'BookingPage',
 
   components: {
     NavBar,
+    User,
+    ShoppingCart,
   },
 
   setup() {
@@ -337,6 +325,7 @@ export default {
     const isLogin = computed(() => userStore.isLogin)
     const userName = computed(() => userStore.name)
     const userAvatar = computed(() => userStore.avatar)
+    const userStats = ref({})
 
     // 搜索和筛选状态
     const searchKeyword = ref('')
@@ -348,6 +337,7 @@ export default {
     const currentPage = ref(1)
     const pageSize = ref(10)
     const total = ref(0)
+    const venueReviewStats = ref({}) // 评价统计数据
 
     // 默认图片
     const defaultImage =
@@ -376,15 +366,52 @@ export default {
 
     // 用户统计数据
     const userBookingsCount = computed(() => {
-      return userStore.userInfo?.bookingCount || 0
+      return userStats.value.bookings || 0
     })
 
-    const userFavoritesCount = computed(() => 0)
+    // 获取用户统计数据
+    const loadUserStats = async () => {
+      if (!isLogin.value) return
+
+      try {
+        console.log('开始获取用户预订数据...')
+
+        // 先尝试使用getUserStats API
+        try {
+          const res = await getUserStats()
+          console.log('用户统计数据响应:', res)
+
+          if (res.code === 200 && res.data) {
+            userStats.value = res.data
+            console.log('设置用户统计数据:', userStats.value)
+            return
+          }
+        } catch (statsError) {
+          console.warn('getUserStats API调用失败，尝试使用预订数据:', statsError)
+        }
+
+        // 如果getUserStats失败，使用getMyBookings来统计
+        const bookingsRes = await getMyBookings()
+        console.log('用户预订数据响应:', bookingsRes)
+
+        if (bookingsRes.code === 200 && bookingsRes.data) {
+          const bookingCount = Array.isArray(bookingsRes.data) ? bookingsRes.data.length : 0
+          userStats.value = {
+            bookingCount: bookingCount,
+            favoriteCount: 0, // 暂时设为0，后续可以添加收藏API
+          }
+          console.log('通过预订数据设置统计:', userStats.value)
+        }
+      } catch (error) {
+        console.error('获取用户统计数据失败:', error)
+      }
+    }
 
     // 监听登录状态变化
     watch(isLogin, (newVal) => {
       if (newVal) {
         loadVenues()
+        loadUserStats()
       }
     })
 
@@ -392,6 +419,7 @@ export default {
     onMounted(() => {
       if (isLogin.value) {
         loadVenues()
+        loadUserStats()
       }
     })
 
@@ -430,6 +458,9 @@ export default {
           }
         })
 
+        // 获取每个场馆的评价统计
+        await loadVenueReviewStats()
+
         filteredVenues.value = venues.value
         total.value = response.data.total || venues.value.length
       } catch (error) {
@@ -440,6 +471,21 @@ export default {
         total.value = 0
       } finally {
         loading.value = false
+      }
+    }
+
+    // 获取场馆评价统计
+    const loadVenueReviewStats = async () => {
+      for (const venue of venues.value) {
+        try {
+          const res = await getVenueReviewStats(venue.id)
+          if (res.code === 200 && res.data) {
+            venueReviewStats.value[venue.id] = res.data
+          }
+        } catch (error) {
+          console.error(`获取场馆 ${venue.id} 评价统计失败:`, error)
+          venueReviewStats.value[venue.id] = { avgRating: '0.0', totalReviews: 0 }
+        }
       }
     }
 
@@ -487,6 +533,68 @@ export default {
       return venue.facilities.split(/[、,，]/).slice(0, 3)
     }
 
+    // 获取场馆评分
+    const getVenueRating = (venue) => {
+      const stats = venueReviewStats.value[venue.id]
+      return stats ? stats.avgRating : '0.0'
+    }
+
+    // 获取场馆评价数量
+    const getVenueReviewCount = (venue) => {
+      const stats = venueReviewStats.value[venue.id]
+      return stats ? stats.totalReviews : 0
+    }
+
+    // 获取状态样式（内联样式，确保刷新后也能显示）
+    const getStatusStyle = (status) => {
+      const baseStyle = {
+        position: 'absolute',
+        top: '12px',
+        left: '12px',
+        padding: '6px 12px',
+        borderRadius: '20px',
+        fontSize: '12px',
+        fontWeight: '600',
+        whiteSpace: 'nowrap',
+        maxWidth: 'fit-content',
+        zIndex: '6',
+      }
+
+      if (status === 1) {
+        return {
+          ...baseStyle,
+          background: 'rgba(16, 185, 129, 0.9)',
+          color: 'white',
+        }
+      } else {
+        return {
+          ...baseStyle,
+          background: 'rgba(239, 68, 68, 0.9)',
+          color: 'white',
+        }
+      }
+    }
+
+    // 获取类型样式（内联样式，确保刷新后也能显示）
+    const getTypeStyle = () => {
+      return {
+        position: 'absolute',
+        bottom: '12px',
+        right: '12px',
+        background: 'rgba(0, 0, 0, 0.7)',
+        color: '#ffffff',
+        padding: '2px 8px',
+        borderRadius: '8px',
+        fontSize: '10px',
+        lineHeight: '1.2',
+        whiteSpace: 'nowrap',
+        zIndex: '5',
+        maxWidth: '120px',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      }
+    }
+
     const calculateDiscount = (originalPrice, currentPrice) => {
       if (!originalPrice || originalPrice <= currentPrice) return 0
       const discount = ((originalPrice - currentPrice) / originalPrice) * 100
@@ -508,27 +616,6 @@ export default {
         path: '/Order',
         query: { venueId: venue.id },
       })
-    }
-
-    const quickBook = (venue, timeSlot) => {
-      if (!isLogin.value) {
-        ElMessage.warning('请先登录')
-        goToLogin()
-        return
-      }
-
-      ElMessage.info(`快速预订 ${venue.name} ${timeSlot}`)
-    }
-
-    const getQuickTimeSlots = () => {
-      const now = new Date()
-      const currentHour = now.getHours()
-      return ['14:00-16:00', '16:00-18:00', '19:00-21:00']
-        .filter((slot) => {
-          const startHour = parseInt(slot.split(':')[0])
-          return startHour > currentHour + 1
-        })
-        .slice(0, 2)
     }
 
     const handleSizeChange = (size) => {
@@ -556,7 +643,6 @@ export default {
       userName,
       userAvatar,
       userBookingsCount,
-      userFavoritesCount,
 
       // 搜索和筛选
       searchKeyword,
@@ -570,6 +656,7 @@ export default {
       total,
       defaultImage,
       priceRanges,
+      venueReviewStats, // 评价统计
 
       // 计算属性
       hasFilters,
@@ -581,11 +668,13 @@ export default {
       getStatusClass,
       getStatusText,
       getFacilities,
+      getVenueRating,
+      getVenueReviewCount,
+      getStatusStyle,
+      getTypeStyle,
       calculateDiscount,
       viewVenueDetail,
       handleBooking,
-      quickBook,
-      getQuickTimeSlots,
       handleSizeChange,
       handleCurrentChange,
       goToLogin,
@@ -760,8 +849,10 @@ export default {
         align-items: center;
         justify-content: center;
 
-        i {
-          font-size: 24px;
+        svg {
+          width: 24px;
+          height: 24px;
+          color: white;
         }
       }
 
@@ -856,15 +947,18 @@ export default {
   .price-filter {
     width: 200px;
     min-width: 200px;
+    max-width: 200px;
     flex-shrink: 0;
 
     @media (max-width: 768px) {
       width: 100%;
       min-width: 100%;
+      max-width: 100%;
     }
 
     :deep(.el-select) {
-      width: 100%;
+      width: 100% !important;
+      max-width: 100% !important;
 
       .el-input__wrapper {
         height: 48px;
@@ -876,6 +970,7 @@ export default {
           border-color 0.3s ease,
           box-shadow 0.3s ease,
           background-color 0.3s ease;
+        width: 100% !important;
 
         &:hover {
           border-color: #cbd5e1;
@@ -887,6 +982,10 @@ export default {
           box-shadow: 0 0 0 4px rgba(79, 172, 254, 0.1);
           background: white;
         }
+      }
+
+      .el-input__inner {
+        width: 100% !important;
       }
     }
   }
@@ -1006,6 +1105,7 @@ export default {
 .venue-image {
   flex: 0 0 280px;
   height: 180px;
+  min-height: 180px;
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
@@ -1015,6 +1115,7 @@ export default {
     width: 100%;
     flex: none;
     height: 200px;
+    min-height: 200px;
   }
 
   img {
@@ -1028,35 +1129,12 @@ export default {
     transform: scale(1.05);
   }
 
-  .venue-status {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-
-    &.open {
-      background: rgba(16, 185, 129, 0.9);
-      color: white;
-    }
-
-    &.closed {
-      background: rgba(239, 68, 68, 0.9);
-      color: white;
-    }
+  .venue-image .venue-status {
+    /* 样式主要通过内联样式应用 */
   }
 
-  .venue-type {
-    position: absolute;
-    bottom: 12px;
-    left: 12px;
-    padding: 6px 12px;
-    background: rgba(0, 0, 0, 0.6);
-    color: white;
-    border-radius: 20px;
-    font-size: 12px;
+  .venue-image .venue-type {
+    /* 样式主要通过内联样式应用 */
   }
 }
 
@@ -1224,14 +1302,23 @@ export default {
 
   .action-buttons {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 10px;
     width: 100%;
+    align-items: stretch;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+    }
 
     .el-button {
-      width: 100%;
+      flex: 1;
       border-radius: 10px;
       font-weight: 600;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
       i {
         margin-right: 6px;
@@ -1255,37 +1342,6 @@ export default {
 
       &:hover {
         background: linear-gradient(135deg, #059669 0%, #047857 100%);
-      }
-    }
-  }
-
-  .quick-booking {
-    width: 100%;
-
-    .quick-title {
-      font-size: 12px;
-      color: #94a3b8;
-      margin-bottom: 8px;
-    }
-
-    .time-slots {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-
-      .time-slot {
-        padding: 6px 12px;
-        background: #f0fdf4;
-        color: #10b981;
-        border-radius: 6px;
-        font-size: 12px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-
-        &:hover {
-          background: #10b981;
-          color: white;
-        }
       }
     }
   }

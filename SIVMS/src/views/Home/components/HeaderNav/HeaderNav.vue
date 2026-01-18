@@ -3,7 +3,7 @@
     <div class="nav-container">
       <!-- Logo -->
       <div class="nav-logo" @click="goToHome">
-        <i class="el-icon-s-opportunity"></i>
+        <el-icon><Star /></el-icon>
         <span class="logo-text">体育场馆管理系统</span>
       </div>
 
@@ -18,30 +18,53 @@
         >
           <el-menu-item index="/venue">
             <template #title>
-              <i class="el-icon-location-information"></i>
+              <el-icon><LocationInformation /></el-icon>
               <span>场馆展示</span>
             </template>
           </el-menu-item>
 
           <el-menu-item index="/booking">
-            <i class="el-icon-date"></i>
-            <span>场馆预订</span>
+            <template #title>
+              <el-icon><Calendar /></el-icon>
+              <span>场馆预订</span>
+            </template>
           </el-menu-item>
 
           <el-menu-item index="/OrderManagement">
-            <i class="el-icon-document"></i>
-            <span>订单管理</span>
+            <template #title>
+              <el-icon><Document /></el-icon>
+              <span>订单管理</span>
+            </template>
           </el-menu-item>
 
           <el-menu-item index="/equipment">
-            <i class="el-icon-basketball"></i>
-            <span>器材借用</span>
+            <template #title>
+              <el-icon><Star /></el-icon>
+              <span>器材借用</span>
+            </template>
+          </el-menu-item>
+
+          <!-- 故障申报 - 根据用户角色显示不同页面 -->
+          <el-menu-item v-if="!isAdmin" index="/fault/report">
+            <template #title>
+              <el-icon><Warning /></el-icon>
+              <span>故障申报</span>
+            </template>
+          </el-menu-item>
+
+          <el-menu-item v-if="isAdmin" index="/fault/management">
+            <template #title>
+              <el-icon><Warning /></el-icon>
+              <span>故障管理</span>
+            </template>
           </el-menu-item>
 
           <!-- 管理员专属：审批管理 -->
           <el-menu-item v-if="isAdmin" index="/approval">
-            <i class="el-icon-s-check"></i>
-            <span>审批管理</span>
+            <template #title>
+              <el-icon><Check /></el-icon>
+              <span>审批管理</span>
+            </template>
           </el-menu-item>
         </el-menu>
       </nav>
@@ -50,33 +73,38 @@
       <div class="nav-user">
         <!-- 管理员标识 -->
         <el-tag v-if="isAdmin" type="danger" size="small" class="admin-tag">
-          <i class="el-icon-s-custom"></i> 管理员
+          <template #default>
+            <el-icon><UserFilled /></el-icon>
+            <span class="admin-text">管理员</span>
+          </template>
         </el-tag>
 
         <el-dropdown @command="handleUserCommand">
           <div class="user-info">
             <el-avatar :size="36" :src="userAvatar" :icon="UserFilled" class="user-avatar" />
             <span class="user-name">{{ userName }}</span>
-            <i class="el-icon-arrow-down"></i>
+            <el-icon><ArrowDown /></el-icon>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="profile">
-                <i class="el-icon-user"></i> 个人中心
+                <el-icon><User /></el-icon> 个人中心
               </el-dropdown-item>
-              <el-dropdown-item command="settings">
-                <i class="el-icon-setting"></i> 系统设置
-              </el-dropdown-item>
-              <el-dropdown-item command="messages" divided>
-                <i class="el-icon-message"></i> 我的消息
-                <el-badge :value="messageCount" v-if="messageCount > 0" />
+              <el-dropdown-item command="myReviews">
+                <el-icon><Star /></el-icon> 我的评论
               </el-dropdown-item>
               <!-- 管理员专属菜单 -->
+              <el-dropdown-item v-if="isAdmin" command="noticeManage" divided>
+                <el-icon><Bell /></el-icon> 通知管理
+              </el-dropdown-item>
+              <el-dropdown-item v-if="isAdmin" command="userManage">
+                <el-icon><UserFilled /></el-icon> 用户管理
+              </el-dropdown-item>
               <el-dropdown-item v-if="isAdmin" command="adminPanel" divided>
-                <i class="el-icon-s-tools"></i> 管理后台
+                <el-icon><Tools /></el-icon> 管理后台
               </el-dropdown-item>
               <el-dropdown-item command="logout" divided>
-                <i class="el-icon-switch-button"></i> 退出登录
+                <el-icon><SwitchButton /></el-icon> 退出登录
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -87,19 +115,68 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { UserFilled } from '@element-plus/icons-vue'
+import {
+  Star,
+  LocationInformation,
+  Calendar,
+  Document,
+  Warning,
+  Check,
+  UserFilled,
+  User,
+  ArrowDown,
+  Setting,
+  Message,
+  Tools,
+  SwitchButton,
+  Bell,
+} from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 export default {
   name: 'HeaderNav',
+  components: {
+    Star,
+    LocationInformation,
+    Calendar,
+    Document,
+    Warning,
+    Check,
+    UserFilled,
+    User,
+    ArrowDown,
+    Setting,
+    Message,
+    Tools,
+    SwitchButton,
+    Bell,
+  },
   emits: ['nav-click'],
   setup(props, { emit }) {
     const router = useRouter()
+    const route = useRoute()
     const userStore = useUserStore()
-    const activeNav = ref('venues')
+
+    // 根据当前路由设置激活的导航项
+    const activeNav = computed(() => {
+      const path = route.path
+
+      // 路径映射到导航项
+      const pathToNavMap = {
+        '/venue': '/venue',
+        '/booking': '/booking',
+        '/OrderManagement': '/OrderManagement',
+        '/equipment': '/equipment',
+        '/fault/report': '/fault/report',
+        '/fault/management': '/fault/management',
+        '/approval': '/approval',
+      }
+
+      return pathToNavMap[path] || ''
+    })
 
     const userName = computed(() => userStore.name || '用户')
     const userAvatar = computed(() => userStore.avatar)
@@ -107,12 +184,11 @@ export default {
 
     // 判断是否为管理员
     const isAdmin = computed(() => {
-      // 根据你的用户存储结构调整，可能是 role === 'admin' 或 userType === 1 等
-      return userStore.role === 'admin' || userStore.userType === 'admin' || userStore.isAdmin
+      // 根据数据库角色定义：0-普通用户, 1-会员, 2-管理员
+      return userStore.role === 2 || userStore.userType === 2 || userStore.isAdmin
     })
 
     const handleMenuSelect = (index) => {
-      activeNav.value = index
       emit('nav-click', { key: index })
     }
 
@@ -121,11 +197,17 @@ export default {
         case 'profile':
           router.push('/profile')
           break
-        case 'settings':
-          router.push('/settings')
+        case 'myReviews':
+          // 我的评论在新页面打开
+          window.open('/my-reviews', '_blank')
           break
-        case 'messages':
-          router.push('/messages')
+        case 'noticeManage':
+          // 通知管理在新页面打开
+          window.open('/notice-manage', '_blank')
+          break
+        case 'userManage':
+          // 用户管理在新页面打开
+          window.open('/user-manage', '_blank')
           break
         case 'adminPanel':
           router.push('/resourceManage')
@@ -214,11 +296,16 @@ export default {
 
   .nav-menu {
     flex: 1;
-    margin: 0 40px;
+    margin: 0 20px;
 
     :deep(.custom-menu) {
       border-bottom: none;
       background: transparent;
+
+      .el-menu-item {
+        padding: 0 12px;
+        min-width: fit-content;
+      }
 
       .el-sub-menu,
       .el-menu-item {
@@ -237,7 +324,7 @@ export default {
         }
 
         i {
-          font-size: 1.2rem;
+          font-size: 1.1rem;
           margin-right: 6px;
         }
       }
@@ -245,12 +332,22 @@ export default {
       .el-sub-menu.is-active {
         .el-sub-menu__title {
           color: #4facfe;
+          background: rgba(79, 172, 254, 0.05);
+
+          &:hover {
+            background: rgba(79, 172, 254, 0.08);
+          }
         }
       }
 
       .el-menu-item.is-active {
         color: #4facfe;
         border-bottom: 2px solid #4facfe;
+        background: rgba(79, 172, 254, 0.05);
+
+        &:hover {
+          background: rgba(79, 172, 254, 0.08);
+        }
       }
     }
   }
@@ -261,13 +358,33 @@ export default {
     gap: 15px;
 
     .admin-tag {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border: none;
-      color: white;
-      font-weight: 500;
+      background: linear-gradient(135deg, #00f2fe 100%) !important;
+      border: none !important;
+      color: white !important;
+      font-weight: 500 !important;
+      padding: 6px 10px !important;
+      font-size: 0.75rem !important;
+      white-space: nowrap !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+      min-width: fit-content !important;
+      height: auto !important;
+      line-height: 1 !important;
+      border-radius: 4px !important;
 
-      i {
-        margin-right: 4px;
+      .el-icon {
+        font-size: 0.8rem !important;
+        flex-shrink: 0 !important;
+        margin-right: 2px !important;
+        display: inline-block !important;
+        vertical-align: middle !important;
+      }
+
+      .admin-text {
+        display: inline-block !important;
+        white-space: nowrap !important;
+        vertical-align: middle !important;
       }
     }
 
@@ -348,9 +465,18 @@ export default {
     }
 
     .nav-user {
+      gap: 10px;
+
       .admin-tag {
+        padding: 3px 6px;
+        font-size: 0.7rem;
+
         span {
-          display: none;
+          display: inline;
+        }
+
+        .el-icon {
+          font-size: 0.7rem;
         }
       }
 

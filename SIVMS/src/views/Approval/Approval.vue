@@ -117,6 +117,70 @@
 
             <el-empty v-if="!loading && rentalList.length === 0" description="暂无待审批的借用" />
           </el-tab-pane>
+
+          <!-- 退款审核 Tab -->
+          <el-tab-pane name="refund">
+            <template #label>
+              <span><i class="el-icon-money"></i> 退款审核</span>
+              <el-badge :value="refundList.length" class="tab-badge" v-if="refundList.length > 0" />
+            </template>
+
+            <el-table :data="refundList" v-loading="loading" stripe style="width: 100%">
+              <el-table-column prop="orderNo" label="订单号" width="180" />
+              <el-table-column label="申请人" width="150">
+                <template #default="scope">
+                  <div>{{ scope.row.nickname || scope.row.username }}</div>
+                  <div class="sub-text">{{ scope.row.username }}</div>
+                </template>
+              </el-table-column>
+              <el-table-column label="订单类型" width="120">
+                <template #default="scope">
+                  <el-tag :type="scope.row.orderType === 1 ? 'warning' : 'primary'" size="small">
+                    {{ scope.row.orderType === 1 ? '器材订单' : '场馆订单' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="退款金额" width="120">
+                <template #default="scope">
+                  <span class="price">¥{{ scope.row.refundAmount }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="退款原因" min-width="150">
+                <template #default="scope">
+                  <div>{{ scope.row.reason }}</div>
+                  <div v-if="scope.row.remark" class="sub-text">{{ scope.row.remark }}</div>
+                </template>
+              </el-table-column>
+              <el-table-column label="申请时间" width="180">
+                <template #default="scope">
+                  {{ formatDateTime(scope.row.createTime) }}
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="200" fixed="right">
+                <template #default="scope">
+                  <el-button
+                    type="success"
+                    size="small"
+                    @click="handleRefundAudit(scope.row.id, true)"
+                  >
+                    批准退款
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="handleRefundAudit(scope.row.id, false)"
+                  >
+                    驳回申请
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+
+            <el-empty
+              v-if="!loading && refundList.length === 0"
+              description="暂无待审核的退款申请"
+            />
+          </el-tab-pane>
         </el-tabs>
       </div>
     </div>
@@ -177,8 +241,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import HeaderNav from '../Home/components/HeaderNav/HeaderNav.vue'
 import { getPendingBookings, getPendingRentals } from '@/api/approval'
 import { approveRental, rejectRental } from '@/api/equipment'
-// 如果场馆预约也有类似的审核接口，可以在这里引入：
-// import { approveBooking, rejectBooking } from '@/api/booking'
+import { auditBooking } from '@/api/booking'
+import request from '@/api/request'
 
 export default {
   name: 'ApprovalPage',
@@ -190,6 +254,7 @@ export default {
     const loading = ref(false)
     const bookingList = ref([])
     const rentalList = ref([])
+    const refundList = ref([])
 
     // 获取数据
     const fetchData = async () => {
@@ -198,9 +263,12 @@ export default {
         if (activeTab.value === 'booking') {
           const res = await getPendingBookings()
           if (res.code === 200) bookingList.value = res.data || []
-        } else {
+        } else if (activeTab.value === 'rental') {
           const res = await getPendingRentals()
           if (res.code === 200) rentalList.value = res.data || []
+        } else if (activeTab.value === 'refund') {
+          const res = await getPendingRefunds()
+          if (res.code === 200) refundList.value = res.data || []
         }
       } catch (error) {
         console.error('获取审批列表失败', error)
@@ -234,12 +302,8 @@ export default {
               // 器材借用：调用你已经实现好的接口
               res = pass ? await approveRental(id) : await rejectRental(id)
             } else if (type === 'booking') {
-              // 场馆预约：如果有对应的接口，在这里调用
-              // 例如：
-              // res = pass ? await approveBooking(id) : await rejectBooking(id)
-              // 目前后端接口你没贴出来，这里先给个兜底提示
-              ElMessage.warning('场馆预约审核接口尚未对接，请在前端补齐调用逻辑')
-              return
+              // 场馆预约：调用审核接口
+              res = pass ? await auditBooking(id, 1, '') : await auditBooking(id, 2, '')
             }
 
             if (res && res.code === 200) {
@@ -270,6 +334,54 @@ export default {
         })
     }
 
+    // 退款审核操作
+    const handleRefundAudit = (id, pass) => {
+      const actionText = pass ? '批准' : '驳回'
+
+      ElMessageBox.confirm(`确定要${actionText}这条退款申请吗？`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: pass ? 'success' : 'warning',
+      })
+        .then(async () => {
+          loading.value = true
+          try {
+            const res = await request({
+              url: `/api/refund/audit/${id}`,
+              method: 'put',
+              data: {
+                approved: pass,
+                auditRemark: '',
+              },
+            })
+
+            if (res && res.code === 200) {
+              ElMessage.success('操作成功')
+              // 刷新退款列表
+              await fetchData()
+            } else if (res) {
+              ElMessage.error(res.msg || '操作失败')
+            }
+          } catch (error) {
+            console.error('退款审核失败', error)
+            ElMessage.error('网络错误，操作失败')
+          } finally {
+            loading.value = false
+          }
+        })
+        .catch(() => {
+          // 用户取消，不做处理
+        })
+    }
+
+    // 获取待审核退款列表
+    const getPendingRefunds = () => {
+      return request({
+        url: '/api/admin/approval/refunds',
+        method: 'get',
+      })
+    }
+
     // 时间格式化
     const formatDate = (dateStr) => {
       if (!dateStr) return ''
@@ -282,12 +394,15 @@ export default {
     }
 
     onMounted(() => {
-      // 初始加载两个列表，用于展示 Badge 数量
+      // 初始加载所有列表，用于展示 Badge 数量
       getPendingBookings().then((res) => {
         if (res.code === 200) bookingList.value = res.data || []
       })
       getPendingRentals().then((res) => {
         if (res.code === 200) rentalList.value = res.data || []
+      })
+      getPendingRefunds().then((res) => {
+        if (res.code === 200) refundList.value = res.data || []
       })
     })
 
@@ -296,8 +411,10 @@ export default {
       loading,
       bookingList,
       rentalList,
+      refundList,
       handleTabClick,
       handleAudit,
+      handleRefundAudit,
       formatDate,
       formatDateTime,
     }

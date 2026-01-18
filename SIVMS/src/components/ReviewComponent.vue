@@ -162,24 +162,78 @@ const setSort = (type) => {
   sortBy.value = type
 }
 
+// 基于本地评论数据计算统计信息
+const calculateLocalStats = () => {
+  if (!reviews.value || reviews.value.length === 0) {
+    reviewStats.value = {
+      avgRating: '0.0',
+      totalReviews: 0,
+    }
+    return
+  }
+
+  const totalReviews = reviews.value.length
+  const totalRating = reviews.value.reduce((sum, review) => {
+    return sum + (Number(review.rating) || 0)
+  }, 0)
+
+  const avgRating = (totalRating / totalReviews).toFixed(1)
+
+  reviewStats.value = {
+    avgRating: avgRating,
+    totalReviews: totalReviews,
+  }
+
+  console.log('本地计算统计结果:', reviewStats.value)
+}
+
 const loadReviews = async () => {
   if (!props.venueId) return
   try {
     loading.value = true
 
-    // 这里假设 getVenueReviews 已封装为返回评价列表数组
-    // 如果它返回的是 { total, list }，请改为：
-    // const { list } = await getVenueReviews(props.venueId)
-    // reviews.value = list
-    reviews.value = await getVenueReviews(props.venueId)
+    // 获取评价列表，API返回格式为 { code, msg, data: { records, total, pageNum, pageSize } }
+    const response = await getVenueReviews(props.venueId)
+
+    // 提取records数组作为评价列表
+    if (response && response.code === 200 && response.data && response.data.records) {
+      reviews.value = response.data.records
+    } else {
+      console.warn('评价数据格式异常:', response)
+      reviews.value = []
+    }
 
     if (props.showStats) {
-      reviewStats.value = await getVenueReviewStats(props.venueId)
+      const statsResponse = await getVenueReviewStats(props.venueId)
+      console.log('统计数据API响应:', statsResponse)
+
+      // 提取统计数据，API返回格式可能为 { code, msg, data: {...} }
+      if (statsResponse && statsResponse.code === 200 && statsResponse.data) {
+        reviewStats.value = statsResponse.data
+        console.log('设置的统计数据:', reviewStats.value)
+        console.log('平均评分:', reviewStats.value.avgRating)
+
+        // 如果API返回的统计数据为空或无效，则基于本地评论数据计算
+        if (
+          !reviewStats.value.avgRating ||
+          reviewStats.value.avgRating === '0.0' ||
+          reviewStats.value.totalReviews === 0
+        ) {
+          console.log('API统计数据无效，使用本地计算')
+          calculateLocalStats()
+        }
+      } else {
+        console.warn('统计数据格式异常:', statsResponse)
+        reviewStats.value = null
+        // 如果API失败，也尝试本地计算
+        calculateLocalStats()
+      }
     }
-    console.log('Loaded reviews:', reviews.value)
+    console.log('已加载评价:', reviews.value)
   } catch (error) {
     console.error(error)
     ElMessage.error('加载评价失败')
+    reviews.value = []
   } finally {
     loading.value = false
   }
@@ -212,7 +266,7 @@ defineExpose({ refresh: loadReviews })
   display: flex;
   gap: 32px;
   padding: 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   border-radius: 12px;
   margin-bottom: 24px;
   color: white;
@@ -382,7 +436,7 @@ defineExpose({ refresh: loadReviews })
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #00f2fe 100%);
   color: white;
   display: flex;
   align-items: center;

@@ -16,3 +16,11 @@ export function getPendingRentals() {
   })
 }
 
+// 获取待审批退款
+export function getPendingRefunds() {
+  return request({
+    url: '/api/admin/approval/refunds',
+    method: 'get'
+  })
+}
+

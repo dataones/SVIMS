@@ -367,6 +367,10 @@
                         <i class="el-icon-chat-dot-round"></i>
                         去评价
                       </el-button>
+                      <el-button type="warning" size="small" @click="handleRefundRequest(order)">
+                        <i class="el-icon-money"></i>
+                        申请退款
+                      </el-button>
                       <el-button type="info" size="small" @click="handleReOrder(order)">
                         <i class="el-icon-refresh"></i>
                         再次预订
@@ -572,6 +576,10 @@
                       <i class="el-icon-chat-dot-round"></i>
                       去评价
                     </el-button>
+                    <el-button type="warning" size="small" @click="handleRefundRequest(order)">
+                      <i class="el-icon-money"></i>
+                      申请退款
+                    </el-button>
                     <el-button type="info" size="small" @click="handleReOrderEquipment(order)">
                       <i class="el-icon-refresh"></i>
                       再次租赁
@@ -687,6 +695,71 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 退款申请对话框 -->
+    <el-dialog v-model="showRefundDialog" title="申请退款" width="500px" append-to-body>
+      <div class="refund-dialog">
+        <div class="order-info" v-if="refundForm.order">
+          <div class="info-item">
+            <span class="label">订单号：</span>
+            <span class="value">{{ refundForm.order.orderNumber }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">订单金额：</span>
+            <span class="value amount">¥{{ refundForm.order.totalAmount }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">可退金额：</span>
+            <span class="value refundable">¥{{ refundForm.order.totalAmount }}</span>
+          </div>
+        </div>
+
+        <el-form :model="refundForm" label-width="100px" :rules="refundRules" ref="refundFormRef">
+          <el-form-item label="退款原因：" prop="reason">
+            <el-select
+              v-model="refundForm.reason"
+              placeholder="请选择退款原因"
+              size="large"
+              style="width: 100%"
+            >
+              <el-option label="服务不满意" value="服务不满意" />
+              <el-option label="计划有变" value="计划有变" />
+              <el-option label="重复下单" value="重复下单" />
+              <el-option label="其他原因" value="其他原因" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="退款金额：" prop="amount">
+            <el-input-number
+              v-model="refundForm.amount"
+              :min="0.01"
+              :max="refundForm.order?.totalAmount || 0"
+              :precision="2"
+              :step="0.01"
+              style="width: 100%"
+              size="large"
+            />
+          </el-form-item>
+          <el-form-item label="详细说明：" prop="remark" v-if="refundForm.reason === '其他原因'">
+            <el-input
+              v-model="refundForm.remark"
+              type="textarea"
+              placeholder="请输入详细的退款原因"
+              :rows="3"
+              maxlength="200"
+              show-word-limit
+            />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showRefundDialog = false">取 消</el-button>
+          <el-button type="primary" @click="confirmRefundRequest" :loading="refundLoading">
+            提交申请
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
   <div>
     <!-- 底部信息 -->
@@ -746,6 +819,9 @@ import { useUserStore } from '@/stores/user'
 import NavBar from '../Home/components/HeaderNav/HeaderNav.vue'
 import { listOrders } from '@/api/order'
 import { returnEquipment } from '@/api/equipment' // 新增这一行
+import { cancelBooking } from '@/api/booking' // 新增取消预约API
+import { deleteOrder } from '@/api/order' // 新增删除订单API
+import request from '@/api/request' // 新增导入request
 
 export default {
   name: 'OrderManagementPage',
@@ -799,6 +875,27 @@ export default {
       reason: '',
       remark: '',
     })
+
+    // 退款相关
+    const showRefundDialog = ref(false)
+    const refundLoading = ref(false)
+    const refundFormRef = ref(null)
+    const refundForm = ref({
+      order: null,
+      reason: '',
+      amount: 0,
+      remark: '',
+    })
+
+    // 退款表单验证规则
+    const refundRules = {
+      reason: [{ required: true, message: '请选择退款原因', trigger: 'change' }],
+      amount: [
+        { required: true, message: '请输入退款金额', trigger: 'blur' },
+        { type: 'number', min: 0.01, message: '退款金额必须大于0', trigger: 'blur' },
+      ],
+      remark: [{ required: true, message: '请输入详细说明', trigger: 'blur' }],
+    }
 
     // 默认图片
     const defaultImage =
@@ -862,7 +959,10 @@ export default {
       try {
         // 调用后端API，将前端的0/1映射到后端的1/2
         const response = await listOrders(orderType.value === 0 ? 1 : 2)
-        const apiOrders = response.data || []
+
+        // 处理分页数据结构
+        const apiOrders = response.data?.records || response.data || []
+        const apiTotal = response.data?.total || 0
 
         // 根据API返回的数据格式处理
         let processedOrders = []
@@ -879,8 +979,8 @@ export default {
               venueId: null,
               venueName: item.venueName || '未知场馆',
               venueType: '运动场馆',
-              venueAddress: '地址未知',
-              venueImage: defaultImage,
+              venueAddress: item.venueAddress || '地址未知', // 使用后端返回的地址
+              venueImage: item.venueImage || defaultImage, // 使用API返回的图片，如果没有则用默认图片
               venuePrice: item.amount,
               equipmentFee: 0,
               serviceFee: 0,
@@ -982,7 +1082,7 @@ export default {
         const startIndex = (currentPage.value - 1) * pageSize.value
         const endIndex = startIndex + pageSize.value
         orders.value = filteredOrders.slice(startIndex, endIndex)
-        total.value = filteredOrders.length
+        total.value = apiTotal // 使用后端返回的总数
 
         // 更新状态统计
         updateStatusCounts(filteredOrders)
@@ -1000,8 +1100,9 @@ export default {
         // 获取两种类型的订单统计
         const [venueResponse, equipmentResponse] = await Promise.all([listOrders(1), listOrders(2)])
 
-        const venueOrders = venueResponse.data || []
-        const equipmentOrders = equipmentResponse.data || []
+        // 处理分页数据结构
+        const venueOrders = venueResponse.data?.records || venueResponse.data || []
+        const equipmentOrders = equipmentResponse.data?.records || equipmentResponse.data || []
 
         // 更新类型统计
         typeStats.value = {
@@ -1189,28 +1290,27 @@ export default {
       }
 
       cancelLoading.value = true
+      cancelingOrderId.value = cancelForm.value.orderId
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        // 调用真实的取消预约API
+        const response = await cancelBooking(cancelForm.value.orderId)
 
-        const orderIndex = orders.value.findIndex((o) => o.id === cancelForm.value.orderId)
-        if (orderIndex > -1) {
-          if (orderType.value === 0) {
-            orders.value[orderIndex].status = 3
-          } else {
-            orders.value[orderIndex].status = 4
-          }
+        if (response.code === 200) {
+          ElMessage.success('预约已取消')
+          showCancelDialog.value = false
+
+          // 重新加载订单列表和统计
+          await loadOrders()
+          await loadOrderStats()
+        } else {
+          ElMessage.error(response.msg || '取消预约失败')
         }
-
-        ElMessage.success('订单已取消')
-        showCancelDialog.value = false
-
-        loadOrders()
-        loadOrderStats()
       } catch (error) {
-        console.error('取消订单失败:', error)
-        ElMessage.error('取消订单失败，请重试')
+        console.error('取消预约失败:', error)
+        ElMessage.error(error.response?.data?.msg || '取消预约失败，请重试')
       } finally {
         cancelLoading.value = false
+        cancelingOrderId.value = null
       }
     }
 
@@ -1292,10 +1392,64 @@ export default {
       ElMessage.info('续租功能开发中')
     }
 
+    // 退款申请处理
+    const handleRefundRequest = (order) => {
+      refundForm.value = {
+        order: order,
+        reason: '',
+        amount: order.totalAmount,
+        remark: '',
+      }
+      showRefundDialog.value = true
+    }
+
+    const confirmRefundRequest = async () => {
+      if (!refundFormRef.value) return
+
+      try {
+        await refundFormRef.value.validate()
+      } catch (error) {
+        return
+      }
+
+      refundLoading.value = true
+      try {
+        const refundData = {
+          orderNo: refundForm.value.order.orderNumber,
+          amount: refundForm.value.amount,
+          reason: refundForm.value.reason,
+          remark: refundForm.value.remark,
+        }
+
+        // 调用退款申请接口
+        const response = await request({
+          url: '/api/refund/request',
+          method: 'post',
+          data: refundData,
+        })
+
+        if (response.code === 200) {
+          ElMessage.success('退款申请已提交，请等待审核')
+          showRefundDialog.value = false
+
+          // 重新加载订单列表和统计
+          await loadOrders()
+          await loadOrderStats()
+        } else {
+          ElMessage.error(response.msg || '退款申请失败')
+        }
+      } catch (error) {
+        console.error('退款申请失败:', error)
+        ElMessage.error('退款申请失败，请重试')
+      } finally {
+        refundLoading.value = false
+      }
+    }
+
     const handleReOrder = (order) => {
       ElMessage.info('重新预订该场馆')
       router.push({
-        path: '/order/create',
+        path: '/booking',
         query: { venueId: order.venueId },
       })
     }
@@ -1303,7 +1457,7 @@ export default {
     const handleReOrderEquipment = (order) => {
       ElMessage.info('重新租赁器材')
       router.push({
-        path: '/equipment/booking',
+        path: '/equipment',
         query: { items: order.equipmentItems.map((item) => item.id).join(',') },
       })
     }
@@ -1313,19 +1467,29 @@ export default {
         confirmButtonText: '确定删除',
         cancelButtonText: '取消',
         type: 'warning',
-      }).then(async () => {
-        try {
-          await new Promise((resolve) => setTimeout(resolve, 800))
-
-          orders.value = orders.value.filter((o) => o.id !== orderId)
-
-          ElMessage.success('订单已删除')
-          loadOrderStats()
-        } catch (error) {
-          console.error('删除订单失败:', error)
-          ElMessage.error('删除订单失败，请重试')
-        }
       })
+        .then(async () => {
+          try {
+            // 调用真实的删除订单API
+            const response = await deleteOrder(orderId)
+
+            if (response.code === 200) {
+              ElMessage.success('订单已删除')
+
+              // 重新加载订单列表和统计
+              await loadOrders()
+              await loadOrderStats()
+            } else {
+              ElMessage.error(response.msg || '删除订单失败')
+            }
+          } catch (error) {
+            console.error('删除订单失败:', error)
+            ElMessage.error(error.response?.data?.msg || '删除订单失败，请重试')
+          }
+        })
+        .catch(() => {
+          // 用户取消删除操作
+        })
     }
 
     const createNewOrder = () => {
@@ -1333,7 +1497,7 @@ export default {
     }
 
     const createEquipmentOrder = () => {
-      router.push('/equipment/booking')
+      router.push('/equipment')
     }
 
     const goToBooking = () => {
@@ -1370,6 +1534,11 @@ export default {
       showCancelDialog,
       cancelLoading,
       cancelForm,
+      showRefundDialog,
+      refundLoading,
+      refundFormRef,
+      refundForm,
+      refundRules,
       defaultImage,
       equipmentDefaultImage,
       orderStatusOptions,
@@ -1396,6 +1565,8 @@ export default {
       handlePayment,
       handleEquipmentReturn,
       handleExtendRental,
+      handleRefundRequest,
+      confirmRefundRequest,
       handleReOrder,
       handleReOrderEquipment,
       handleDelete,
@@ -1591,7 +1762,7 @@ export default {
       }
 
       &.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         color: white;
         box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 
@@ -1915,7 +2086,7 @@ export default {
   }
 
   &.venue-order {
-    border-left: 5px solid #667eea;
+    border-left: 5px solid #5ed6f4;
   }
 
   &.equipment-order {
@@ -1990,7 +2161,7 @@ export default {
     .value {
       font-size: 24px;
       font-weight: 700;
-      color: #667eea;
+      color: #e38f19;
     }
   }
 }
@@ -2152,7 +2323,7 @@ export default {
               }
 
               &.status-completed {
-                color: #667eea;
+                color: #27ee6a;
               }
             }
           }
@@ -2464,7 +2635,7 @@ export default {
           .amount {
             font-size: 20px;
             font-weight: 700;
-            color: #667eea;
+            color: #e38f19;
           }
         }
 
@@ -2724,6 +2895,48 @@ export default {
     text-align: center;
     color: #94a3b8;
     font-size: 0.9rem;
+  }
+}
+
+// 退款对话框样式
+.refund-dialog {
+  .order-info {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    border: 1px solid #e2e8f0;
+
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .label {
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .value {
+        color: #1e293b;
+        font-size: 14px;
+        font-weight: 600;
+
+        &.amount {
+          color: #f59e0b;
+        }
+
+        &.refundable {
+          color: #10b981;
+        }
+      }
+    }
   }
 }
 </style>

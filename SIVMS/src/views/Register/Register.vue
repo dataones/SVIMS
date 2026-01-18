@@ -2,30 +2,40 @@
   <div class="register-container">
     <!-- 全屏背景装饰元素 -->
     <div class="sport-background-elements">
-      <div class="bg-element"><i class="el-icon-stadium"></i></div>
-      <div class="bg-element"><i class="el-icon-basketball"></i></div>
-      <div class="bg-element"><i class="el-icon-swimming"></i></div>
-      <div class="bg-element"><i class="el-icon-gym"></i></div>
-      <div class="bg-element"><i class="el-icon-tennis"></i></div>
+      <div class="bg-element">
+        <el-icon><House /></el-icon>
+      </div>
+      <div class="bg-element">
+        <el-icon><Star /></el-icon>
+      </div>
+      <div class="bg-element">
+        <el-icon><Message /></el-icon>
+      </div>
+      <div class="bg-element">
+        <el-icon><CircleCheck /></el-icon>
+      </div>
+      <div class="bg-element">
+        <el-icon><Check /></el-icon>
+      </div>
     </div>
 
     <!-- 左侧装饰区 -->
     <div class="register-decor">
       <div class="sport-facilities">
         <div class="facility stadium">
-          <i class="el-icon-stadium"></i>
+          <el-icon><House /></el-icon>
           <span>标准体育场</span>
         </div>
         <div class="facility basketball">
-          <i class="el-icon-basketball"></i>
+          <el-icon><Star /></el-icon>
           <span>篮球场地</span>
         </div>
         <div class="facility swimming">
-          <i class="el-icon-swimming"></i>
+          <el-icon><Message /></el-icon>
           <span>游泳场馆</span>
         </div>
         <div class="facility gym">
-          <i class="el-icon-gym"></i>
+          <el-icon><CircleCheck /></el-icon>
           <span>健身中心</span>
         </div>
       </div>
@@ -34,10 +44,18 @@
         <h1>体育场馆综合管理系统</h1>
         <p>智慧管理 · 便捷预约 · 高效运营</p>
         <ul class="features">
-          <li><i class="el-icon-check"></i> 场馆智能预约</li>
-          <li><i class="el-icon-check"></i> 会员统一管理</li>
-          <li><i class="el-icon-check"></i> 数据统计分析</li>
-          <li><i class="el-icon-check"></i> 在线支付结算</li>
+          <li>
+            <el-icon><Check /></el-icon> 场馆智能预约
+          </li>
+          <li>
+            <el-icon><Check /></el-icon> 会员统一管理
+          </li>
+          <li>
+            <el-icon><Check /></el-icon> 数据统计分析
+          </li>
+          <li>
+            <el-icon><Check /></el-icon> 在线支付结算
+          </li>
         </ul>
       </div>
     </div>
@@ -47,7 +65,7 @@
       <el-card class="register-card" shadow="always">
         <div class="form-header">
           <div class="logo">
-            <i class="el-icon-user-filled"></i>
+            <el-icon><User /></el-icon>
           </div>
           <h2>创建账户</h2>
           <p>注册成为体育场馆管理平台用户</p>
@@ -197,6 +215,16 @@
 </template>
 
 <script setup>
+import {
+  User,
+  Lock,
+  House,
+  Star,
+  CircleCheck,
+  Check,
+  Message,
+  Phone,
+} from '@element-plus/icons-vue'
 import registerLogic from './register.js'
 const {
   form,

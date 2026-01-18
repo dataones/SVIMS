@@ -81,15 +81,11 @@
 </template>
 
 <script setup>
-import NavBar from '../Home/components/HeaderNav/HeaderNav.vue'
+import NavBar from '../../components/NavBar.vue'
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import {
-  getReviewsByVenueId,
-  getVenueReviewStats,
-  submitReview as submitReviewApi,
-} from '@/api/review'
+import { getVenueReviews, getVenueReviewStats, submitReview as submitReviewApi } from '@/api/review'
 
 const route = useRoute()
 const router = useRouter()
@@ -110,7 +106,7 @@ const submitting = ref(false)
 const formRef = ref(null)
 
 const reviewForm = ref({
-  orderNo: '',
+  venueId: venueId,
   content: '',
   rating: 5,
 })
@@ -137,7 +133,7 @@ const sortedReviews = computed(() => {
 const fetchReviews = async () => {
   loading.value = true
   try {
-    const res = await getReviewsByVenueId(venueId)
+    const res = await getVenueReviews(venueId)
     if (res.code === 200) {
       reviews.value = res.data.list || []
     }
@@ -180,7 +176,11 @@ const submitReview = async () => {
   await formRef.value.validate()
   submitting.value = true
   try {
-    const res = await submitReviewApi(reviewForm.value)
+    const res = await submitReviewApi({
+      venueId: reviewForm.value.venueId,
+      content: reviewForm.value.content,
+      rating: reviewForm.value.rating,
+    })
     if (res.code === 200) {
       ElMessage.success('评价提交成功')
       writeDialogVisible.value = false

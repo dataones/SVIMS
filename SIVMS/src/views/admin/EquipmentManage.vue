@@ -114,8 +114,8 @@
         <el-form-item label="总库存">
           <el-input-number v-model="form.totalStock" :min="1" />
         </el-form-item>
-        <el-form-item label="图片URL">
-          <el-input v-model="form.image" />
+        <el-form-item label="器材图片">
+          <OssUpload v-model="form.image" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -163,6 +163,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Plus, Edit, Delete, Picture, List } from '@element-plus/icons-vue'
+import OssUpload from '@/components/OssUpload.vue'
 
 // 引入你提供的所有 API
 import {
@@ -236,24 +237,30 @@ const handleDelete = (row) => {
 }
 
 const submitForm = () => {
+  console.log('提交表单数据:', form) // 调试信息
+
+  // 调用API保存器材信息
   const apiCall = form.id ? updateEquipment : addEquipment
   apiCall(form).then((res) => {
+    console.log('API响应:', res) // 调试信息
     if (res.code === 200) {
       ElMessage.success('操作成功')
       dialogVisible.value = false
       getList()
+    } else {
+      ElMessage.error(res.msg || '操作失败')
     }
   })
 }
 
 const handleAdd = () => {
+  // 不要重置image字段，保持OSS上传的URL
   Object.assign(form, {
     id: null,
     name: '',
     specification: '',
     price: 0,
     totalStock: 10,
-    image: '',
     status: 1,
   })
   dialogVisible.value = true

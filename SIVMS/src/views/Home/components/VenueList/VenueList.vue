@@ -6,7 +6,7 @@
         :key="venue.id"
         class="venue-card"
         shadow="hover"
-        :class="{ 'unavailable': venue.status !== 'available' }"
+        :class="{ unavailable: venue.status !== 'available' }"
       >
         <div class="venue-image">
           <img :src="venue.image" :alt="venue.name" />
@@ -27,26 +27,22 @@
         <div class="venue-content">
           <div class="venue-header">
             <h4 class="venue-name">{{ venue.name }}</h4>
-            <el-tag
-              :type="getTypeTag(venue.type)"
-              size="small"
-              effect="light"
-            >
+            <el-tag :type="getTypeTag(venue.type)" size="small" effect="light">
               {{ venue.type }}
             </el-tag>
           </div>
 
           <div class="venue-info">
             <div class="info-item">
-              <i class="el-icon-location"></i>
+              <el-icon><Location /></el-icon>
               <span>{{ venue.location }}</span>
             </div>
             <div class="info-item">
-              <i class="el-icon-user"></i>
+              <el-icon><User /></el-icon>
               <span>容量：{{ venue.capacity }}</span>
             </div>
             <div class="info-item">
-              <i class="el-icon-money"></i>
+              <el-icon><Money /></el-icon>
               <span class="venue-price">¥{{ venue.price }}/小时</span>
             </div>
           </div>
@@ -59,17 +55,11 @@
               @click="handleBooking(venue)"
               :disabled="venue.status !== 'available'"
             >
-              <i class="el-icon-date"></i>
+              <el-icon><Calendar /></el-icon>
               立即预订
             </el-button>
-            <el-button
-              type="info"
-              size="small"
-              round
-              plain
-              @click="handleView(venue)"
-            >
-              <i class="el-icon-view"></i>
+            <el-button type="info" size="small" round plain @click="handleView(venue)">
+              <el-icon><View /></el-icon>
               查看详情
             </el-button>
           </div>
@@ -80,26 +70,35 @@
 </template>
 
 <script>
+import { Location, User, Money, Calendar, View } from '@element-plus/icons-vue'
+
 export default {
   name: 'VenueList',
+  components: {
+    Location,
+    User,
+    Money,
+    Calendar,
+    View,
+  },
   props: {
     venues: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     loading: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   emits: ['venue-click', 'booking-click'],
   setup(props, { emit }) {
     const getTypeTag = (type) => {
       const typeMap = {
-        '篮球': 'success',
-        '游泳': 'primary',
-        '健身': 'warning',
-        '网球': 'info'
+        篮球: 'success',
+        游泳: 'primary',
+        健身: 'warning',
+        网球: 'info',
       }
       return typeMap[type] || 'info'
     }
@@ -115,9 +114,9 @@ export default {
     return {
       getTypeTag,
       handleView,
-      handleBooking
+      handleBooking,
     }
-  }
+  },
 }
 </script>
 

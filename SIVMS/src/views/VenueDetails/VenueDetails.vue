@@ -13,12 +13,12 @@
     <div v-else-if="!venue" class="not-found">
       <div class="not-found-content">
         <div class="not-found-icon">
-          <i class="el-icon-office-building"></i>
+          <el-icon><OfficeBuilding /></el-icon>
         </div>
         <h2>场馆不存在</h2>
         <p>抱歉，您访问的场馆不存在或已被删除</p>
         <el-button type="primary" @click="goBack">
-          <i class="el-icon-back"></i>
+          <el-icon><ArrowLeft /></el-icon>
           返回上一页
         </el-button>
       </div>
@@ -41,7 +41,7 @@
         <div class="main-image" @click="showImageGallery">
           <img :src="mainImage" :alt="venue.name" />
           <div class="image-overlay">
-            <i class="el-icon-zoom-in"></i>
+            <el-icon><ZoomIn /></el-icon>
             <span>点击查看大图</span>
           </div>
         </div>
@@ -76,10 +76,10 @@
           <div class="venue-rating">
             <div class="rating-stars">
               <span class="stars">★★★★★</span>
-              <span class="rating-value">{{ venue.rating || '4.5' }}</span>
+              <span class="rating-value">{{ reviewStats.avgRating || '0.0' }}</span>
             </div>
             <div class="rating-tags">
-              <el-tag type="success" size="small">好评如潮</el-tag>
+              <el-tag type="success" size="small">{{ reviewStats.totalReviews || 0 }}条评价</el-tag>
               <el-tag type="warning" size="small">热门场馆</el-tag>
             </div>
           </div>
@@ -127,11 +127,11 @@
                 :disabled="venue.status !== 1"
                 class="booking-btn"
               >
-                <i class="el-icon-shopping-cart-2"></i>
+                <ShoppingCart />
                 {{ venue.status === 1 ? '立即预订' : '暂时关闭' }}
               </el-button>
               <el-button type="info" size="large" @click="openRulesDialog" class="rules-btn">
-                <i class="el-icon-document"></i>
+                <Document />
                 预订规则
               </el-button>
             </div>
@@ -175,7 +175,7 @@
             <div class="facilities-list">
               <div v-for="(facility, index) in venueFacilities" :key="index" class="facility-item">
                 <div class="facility-icon">
-                  <i :class="getFacilityIcon(facility)"></i>
+                  <component :is="getFacilityIcon(facility)" />
                 </div>
                 <div class="facility-name">{{ facility }}</div>
               </div>
@@ -204,37 +204,24 @@
       </div>
       <!-- ============ 引入评价组件 ============ -->
       <div class="review-section">
-        <VenueReview :venue-id="reviewVenueId" :show-stats="true" :initial-display-count="5" />
+        <VenueReview
+          :venue-id="reviewVenueId"
+          :show-stats="true"
+          :initial-display-count="5"
+          :auto-load="true"
+        />
       </div>
       <!-- ============ 结束评价组件 ============ -->
 
       <!-- 相关推荐 -->
       <div class="related-venues">
         <h3 class="section-title">推荐场馆</h3>
-        <div class="related-list">
-          <div v-for="relatedVenue in relatedVenues" :key="relatedVenue.id" class="related-item">
-            <div class="related-image" @click="goToVenueDetail(relatedVenue.id)">
-              <img :src="relatedVenue.image || defaultImage" :alt="relatedVenue.name" />
-              <div class="related-status" :class="getStatusClass(relatedVenue.status)">
-                {{ getStatusText(relatedVenue.status) }}
-              </div>
-            </div>
-            <div class="related-info">
-              <h4 class="related-name" @click="goToVenueDetail(relatedVenue.id)">
-                {{ relatedVenue.name }}
-              </h4>
-              <div class="related-address">
-                <i class="el-icon-location"></i>
-                <span>{{ relatedVenue.address }}</span>
-              </div>
-              <div class="related-price">
-                <span class="price-label">¥</span>
-                <span class="price-value">{{ relatedVenue.price }}</span>
-                <span class="price-unit">/小时</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <RecommendedVenues
+          :limit="3"
+          :exclude-venue-id="venueId"
+          @venue-click="goToVenueDetail"
+          @booking-click="handleBooking"
+        />
       </div>
     </div>
 
@@ -291,7 +278,7 @@
           <div class="rules-list">
             <div class="rule-item">
               <div class="rule-icon">
-                <i class="el-icon-time"></i>
+                <Clock />
               </div>
               <div class="rule-content">
                 <h5>预订时间</h5>
@@ -301,7 +288,7 @@
 
             <div class="rule-item">
               <div class="rule-icon">
-                <i class="el-icon-money"></i>
+                <Money />
               </div>
               <div class="rule-content">
                 <h5>费用说明</h5>
@@ -311,7 +298,7 @@
 
             <div class="rule-item">
               <div class="rule-icon">
-                <i class="el-icon-circle-close"></i>
+                <CircleClose />
               </div>
               <div class="rule-content">
                 <h5>取消政策</h5>
@@ -321,7 +308,7 @@
 
             <div class="rule-item">
               <div class="rule-icon">
-                <i class="el-icon-user"></i>
+                <User />
               </div>
               <div class="rule-content">
                 <h5>使用规定</h5>
@@ -435,10 +422,32 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import {
+  OfficeBuilding,
+  ArrowLeft,
+  ZoomIn,
+  Location,
+  MapLocation,
+  Clock,
+  ShoppingCart,
+  Document,
+  CircleCheck,
+  Check,
+  ArrowRight,
+  Money,
+  CircleClose,
+  User,
+  DocumentCopy,
+  Setting,
+  Connection,
+  Coffee,
+} from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import NavBar from '../Home/components/HeaderNav/HeaderNav.vue'
 import VenueReview from '@/components/ReviewComponent.vue'
 import { fetchVenueDetail } from '@/api/venue'
+import { getVenueReviewStats } from '@/api/review'
+import RecommendedVenues from '@/components/RecommendedVenues/RecommendedVenues.vue'
 
 export default {
   name: 'VenueDetailPage',
@@ -446,6 +455,25 @@ export default {
   components: {
     NavBar,
     VenueReview,
+    RecommendedVenues,
+    OfficeBuilding,
+    ArrowLeft,
+    ZoomIn,
+    Location,
+    MapLocation,
+    Clock,
+    ShoppingCart,
+    Document,
+    CircleCheck,
+    Check,
+    ArrowRight,
+    Money,
+    CircleClose,
+    User,
+    DocumentCopy,
+    Setting,
+    Connection,
+    Coffee,
   },
 
   // 接收路由/父组件传进来的 id（可选）
@@ -472,6 +500,7 @@ export default {
     const viewerCurrentIndex = ref(0)
     const showRulesDialog = ref(false)
     const showMapDialog = ref(false)
+    const reviewStats = ref({ avgRating: '0.0', totalReviews: 0 }) // 评价统计
 
     // 默认图片
     const defaultImage =
@@ -484,8 +513,20 @@ export default {
     // 图片
     const venueImages = computed(() => {
       if (!venue.value) return [defaultImage]
+
+      // 优先使用images数组，如果没有则使用单个image字段
       const images = venue.value.images || []
-      return images.length > 0 ? images : [defaultImage]
+      if (images.length > 0) {
+        return images
+      }
+
+      // 如果有单个image字段，将其作为数组返回
+      if (venue.value.image) {
+        return [venue.value.image]
+      }
+
+      // 都没有则使用默认图片
+      return [defaultImage]
     })
 
     const mainImage = computed(() => venueImages.value[currentImageIndex.value])
@@ -510,37 +551,6 @@ export default {
       return ['空调', '淋浴', 'WiFi', '休息区']
     })
 
-    // 推荐场馆（仍是前端写死）
-    const relatedVenues = computed(() => [
-      {
-        id: 2,
-        name: '朝阳网球中心',
-        address: '北京市朝阳区体育中心A座',
-        price: 120,
-        rating: 4.8,
-        status: 1,
-        image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a4314c?w=400&h=300&fit=crop',
-      },
-      {
-        id: 3,
-        name: '奥林匹克游泳馆',
-        address: '北京市朝阳区奥运村',
-        price: 80,
-        rating: 4.6,
-        status: 1,
-        image: 'https://images.unsplash.com/photo-1565008887502-4c1bcd2b6d6b?w=400&h=300&fit=crop',
-      },
-      {
-        id: 4,
-        name: '国际羽毛球馆',
-        address: '北京市海淀区体育公园',
-        price: 90,
-        rating: 4.7,
-        status: 1,
-        image: 'https://images.unsplash.com/photo-1595435934247-5d33b7f92c70?w=400&h=300&fit=crop',
-      },
-    ])
-
     // 给子组件评价用的 ID（数字类型）
     const reviewVenueId = computed(() =>
       resolvedVenueId.value ? Number(resolvedVenueId.value) : 0,
@@ -552,9 +562,20 @@ export default {
       loading.value = true
       try {
         const res = await fetchVenueDetail(resolvedVenueId.value)
-        // 你的 request.js 已经返回 response.data 了，这里的 res 就是 data
-        // 如果后端是 { code, data, message } 格式，写成：venue.value = res.data
-        venue.value = res
+        console.log('场馆详情API响应:', res)
+
+        // 处理后端返回的数据结构
+        if (res.code === 200 && res.data) {
+          venue.value = res.data
+          console.log('设置的场馆数据:', venue.value)
+          console.log('场馆图片:', venue.value?.image)
+
+          // 获取评价统计
+          await loadReviewStats()
+        } else {
+          console.error('场馆详情API响应格式异常:', res)
+          ElMessage.error('获取场馆详情失败')
+        }
       } catch (error) {
         console.error('加载场馆详情失败:', error)
         ElMessage.error(error?.response?.data?.message || '加载场馆详情失败')
@@ -563,10 +584,37 @@ export default {
         loading.value = false
       }
     }
+
+    // ========= 获取评价统计 =========
+    const loadReviewStats = async () => {
+      if (!resolvedVenueId.value) return
+
+      try {
+        const res = await getVenueReviewStats(resolvedVenueId.value)
+        console.log('评价统计API响应:', res)
+
+        if (res.code === 200 && res.data) {
+          reviewStats.value = res.data
+          console.log('评价统计数据:', reviewStats.value)
+        } else {
+          console.error('评价统计API响应格式异常:', res)
+          // 使用默认值
+          reviewStats.value = { avgRating: '0.0', totalReviews: 0 }
+        }
+      } catch (error) {
+        console.error('获取评价统计失败:', error)
+        // 使用默认值
+        reviewStats.value = { avgRating: '0.0', totalReviews: 0 }
+      }
+    }
     // ========= 关键结束 =========
 
     // 初次加载
-    onMounted(loadVenueDetail)
+    onMounted(() => {
+      loadVenueDetail()
+      loadReviewStats()
+      // 推荐场馆组件会自动加载
+    })
 
     // prop venueId 变化时，重新加载
     watch(
@@ -576,6 +624,7 @@ export default {
           resolvedVenueId.value = newVal
           currentImageIndex.value = 0
           loadVenueDetail()
+          // 推荐场馆组件会自动重新加载
         }
       },
     )
@@ -590,6 +639,7 @@ export default {
           resolvedVenueId.value = newId
           currentImageIndex.value = 0
           loadVenueDetail()
+          // 推荐场馆组件会自动重新加载
         }
       },
     )
@@ -623,14 +673,14 @@ export default {
 
     const getFacilityIcon = (facility) => {
       const iconMap = {
-        空调: 'el-icon-fan',
-        淋浴: 'el-icon-water-cup',
-        停车场: 'el-icon-place',
-        WiFi: 'el-icon-link',
-        更衣室: 'el-icon-user',
-        休息区: 'el-icon-coffee-cup',
+        空调: 'Setting',
+        淋浴: 'CircleCheck',
+        停车场: 'Location',
+        WiFi: 'Connection',
+        更衣室: 'User',
+        休息区: 'Coffee',
       }
-      return iconMap[facility] || 'el-icon-circle-check'
+      return iconMap[facility] || 'CircleCheck'
     }
 
     const changeImage = (index) => {
@@ -659,7 +709,7 @@ export default {
         return
       }
       router.push({
-        path: '/booking/order',
+        path: '/Order',
         query: { venueId: venue.value.id },
       })
     }
@@ -713,6 +763,7 @@ export default {
       viewerCurrentIndex,
       showRulesDialog,
       showMapDialog,
+      reviewStats, // 添加评价统计
 
       // 其他数据
       defaultImage,
@@ -727,7 +778,6 @@ export default {
       viewerImages,
       venueFeatures,
       venueFacilities,
-      relatedVenues,
 
       // 方法
       getStatusType,
@@ -947,6 +997,7 @@ export default {
   grid-template-columns: 2fr 1fr;
   gap: 30px;
   margin-bottom: 30px;
+  align-items: start;
 }
 
 .info-left {
@@ -998,9 +1049,12 @@ export default {
     background: #f8fafc;
     border-radius: 12px;
 
-    i {
+    i,
+    svg {
       color: #667eea;
       font-size: 20px;
+      width: 20px;
+      height: 20px;
     }
 
     span {
@@ -1010,7 +1064,7 @@ export default {
     }
 
     .view-map-btn {
-      color: #667eea;
+      color: #de3e25;
       font-weight: 500;
     }
   }
@@ -1022,9 +1076,12 @@ export default {
     color: #64748b;
     font-size: 16px;
 
-    i {
+    i,
+    svg {
       color: #f59e0b;
       font-size: 18px;
+      width: 18px;
+      height: 18px;
     }
   }
 }
@@ -1093,12 +1150,21 @@ export default {
       gap: 12px;
       margin-bottom: 20px;
 
-      .booking-btn {
+      .booking-btn,
+      .rules-btn {
         height: 48px;
         font-size: 16px;
         font-weight: 600;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 160px;
+        min-width: 160px;
+        padding: 0 12px;
+        margin: 0 auto;
+        box-sizing: border-box;
 
         &:hover {
           opacity: 0.9;
@@ -1107,11 +1173,15 @@ export default {
         &:disabled {
           background: #94a3b8;
         }
-      }
 
-      .rules-btn {
-        height: 48px;
-        font-size: 16px;
+        i,
+        svg {
+          margin-right: 6px;
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+          flex-shrink: 0;
+        }
       }
     }
 
@@ -1123,9 +1193,12 @@ export default {
         font-size: 14px;
         color: #64748b;
 
-        i {
+        i,
+        svg {
           color: #10b981;
           font-size: 16px;
+          width: 16px;
+          height: 16px;
         }
       }
     }
@@ -1221,7 +1294,7 @@ export default {
         .facility-icon {
           width: 40px;
           height: 40px;
-          background: #667eea;
+          background: #f7f7f7;
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -1484,9 +1557,12 @@ export default {
           align-items: center;
           justify-content: center;
 
-          i {
+          i,
+          svg {
             font-size: 20px;
             color: #667eea;
+            width: 20px;
+            height: 20px;
           }
         }
 

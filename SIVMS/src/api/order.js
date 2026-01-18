@@ -10,7 +10,7 @@ import request from '@/api/request'
  */
 export function listOrders(type) {
   return request({
-    url: '/api/orders',
+    url: '/api/settlement',
     method: 'get',
     params: {
       type: type || 1, // 默认查询场馆预约订单
@@ -24,7 +24,7 @@ export function listOrders(type) {
  */
 export function payOrder(orderNo) {
   return request({
-    url: `/api/orders/${orderNo}/pay`,
+    url: `/api/settlement/${orderNo}/pay`,
     method: 'post',
   })
 }
@@ -35,7 +35,7 @@ export function payOrder(orderNo) {
  */
 export function finishOrder(orderNo) {
   return request({
-    url: `/api/orders/${orderNo}/finish`,
+    url: `/api/settlement/${orderNo}/finish`,
     method: 'put',
   })
 }
@@ -47,7 +47,7 @@ export function finishOrder(orderNo) {
  */
 export function refundOrder(orderNo, amount) {
   return request({
-    url: `/api/orders/${orderNo}/refund`,
+    url: `/api/settlement/${orderNo}/refund`,
     method: 'put',
     params: { amount },
   })
@@ -59,8 +59,19 @@ export function refundOrder(orderNo, amount) {
  */
 export function getOrderDetail(orderNo) {
   return request({
-    url: `/api/orders/${orderNo}`,
+    url: `/api/settlement/${orderNo}`,
     method: 'get',
+  })
+}
+
+/**
+ * 删除订单
+ * @param {string} orderNo - 订单编号
+ */
+export function deleteOrder(orderNo) {
+  return request({
+    url: `/api/settlement/${orderNo}`,
+    method: 'delete',
   })
 }
 
@@ -97,6 +108,7 @@ export default {
   finishOrder,
   refundOrder,
   getOrderDetail,
+  deleteOrder,
   getOrderStatusText,
   formatOrderAmount,
 }

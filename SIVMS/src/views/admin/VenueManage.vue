@@ -49,18 +49,22 @@
     <el-table :data="tableData" v-loading="loading" border style="margin-top: 20px">
       <el-table-column prop="id" label="ID" width="60" align="center" />
 
-      <el-table-column label="图片" width="100" align="center">
+      <el-table-column label="图片" width="120" align="center">
         <template #default="scope">
           <el-image
-            style="width: 60px; height: 40px"
+            style="width: 80px; height: 60px"
             :src="scope.row.image"
             :preview-src-list="[scope.row.image]"
-            fit="cover"
+            fit="contain"
+            :hide-on-click-modal="true"
           >
             <template #error
               ><div class="image-slot">
-                <el-icon><Picture /></el-icon></div
-            ></template>
+                <el-icon><Picture /></el-icon>
+                <div style="font-size: 10px; color: #999">加载失败</div>
+              </div>
+              ></template
+            >
           </el-image>
         </template>
       </el-table-column>
@@ -74,6 +78,7 @@
       <el-table-column prop="price" label="价格/时" width="100" sortable>
         <template #default="scope">￥{{ scope.row.price }}</template>
       </el-table-column>
+      <el-table-column prop="location" label="地址" min-width="150" show-overflow-tooltip />
       <el-table-column prop="tags" label="标签" show-overflow-tooltip />
 
       <el-table-column label="状态" width="100" align="center">
@@ -134,8 +139,11 @@
         <el-form-item label="价格">
           <el-input-number v-model="form.price" :precision="2" :step="10" />
         </el-form-item>
-        <el-form-item label="图片URL">
-          <el-input v-model="form.image" />
+        <el-form-item label="地址">
+          <el-input v-model="form.location" placeholder="请输入场馆地址" />
+        </el-form-item>
+        <el-form-item label="场馆图片">
+          <OssUpload v-model="form.image" />
         </el-form-item>
         <el-form-item label="营业时间">
           <el-time-select
@@ -174,10 +182,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Plus, Edit, Delete, Picture } from '@element-plus/icons-vue'
 import { fetchVenues, addVenue, updateVenue, deleteVenue } from '@/api/venue'
+import { uploadImage } from '@/api/oss'
+import OssUpload from '@/components/OssUpload.vue'
 
 const loading = ref(false)
 const tableData = ref([])
@@ -203,6 +213,17 @@ const form = reactive({
   closeTime: '',
   status: 1,
 })
+
+// 监听form.image的变化
+watch(
+  () => form.image,
+  (newValue) => {
+    // 如果是对象格式，说明是从OssUpload组件传递的
+    if (newValue && typeof newValue === 'object') {
+      form.image = newValue.url // 使用URL
+    }
+  },
+)
 
 // 获取列表
 const getList = () => {
@@ -255,15 +276,67 @@ const handleDelete = (row) => {
 }
 
 // 提交新增/编辑
-const submitForm = () => {
-  const apiCall = form.id ? updateVenue : addVenue
-  apiCall(form).then((res) => {
-    if (res.code === 200) {
-      ElMessage.success('操作成功')
-      dialogVisible.value = false
-      getList()
+const submitForm = async () => {
+  // 如果有本地图片需要上传（blob:开头），先上传到OSS
+  if (form.image && form.image.startsWith('blob:')) {
+    // 从blob创建File对象
+    let fileToUpload
+    try {
+      fileToUpload = await fetch(form.image)
+        .then((res) => res.blob())
+        .then((blob) => {
+          // 使用你期望的动态时间撮格式：年-月-日 时间撮
+          const now = new Date()
+          const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+          const timeStr = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`
+          const extension = 'png' // 默认使用png扩展名
+          const fileName = `${dateStr} ${timeStr}.${extension}`
+
+          return new File([blob], fileName, { type: `image/${extension}` })
+        })
+
+      const url = await uploadImage(fileToUpload)
+
+      // 更新表单中的image为OSS URL
+      form.image = url
+
+      ElMessage.success('图片上传成功')
+    } catch (error) {
+      // 检查是否是网络错误但实际上传成功
+      if (error.message && error.message.includes('网络错误')) {
+        // 使用你期望的动态时间撮格式：年-月-日 时间撮
+        const now = new Date()
+        const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`
+        const extension = 'png' // 默认使用png扩展名
+        const filename = `${dateStr} ${timeStr}.${extension}`
+        const ossUrl = `https://sims-images.oss-cn-beijing.aliyuncs.com/${filename}`
+
+        form.image = ossUrl
+
+        ElMessage.warning('图片上传可能成功，已构造OSS地址')
+      } else {
+        // 其他类型的错误，直接抛出
+        throw error
+      }
     }
-  })
+  }
+
+  // 调用API保存场馆信息
+  const apiCall = form.id ? updateVenue : addVenue
+  apiCall(form)
+    .then((res) => {
+      if (res.code === 200) {
+        ElMessage.success(res.msg || '操作成功')
+        dialogVisible.value = false
+        getList()
+      } else {
+        ElMessage.error(res.msg || '操作失败')
+      }
+    })
+    .catch((error) => {
+      ElMessage.error('操作失败：' + (error.message || '未知错误'))
+    })
 }
 
 // 查询按钮
@@ -274,13 +347,13 @@ const handleQuery = () => {
 
 // 打开新增弹窗
 const handleAdd = () => {
+  // 不要重置image字段，保持OSS上传的URL
   Object.assign(form, {
     id: null,
     name: '',
     type: '',
     tags: '',
     price: 0,
-    image: '',
     openTime: '',
     closeTime: '',
     status: 1,

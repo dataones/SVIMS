@@ -18,7 +18,7 @@
         <div v-if="currentStep === 1" class="step-content">
           <div class="step-title">
             <h2><i class="el-icon-time"></i> 选择预订时间</h2>
-            <p class="step-subtitle">请选择您的预订日期和时间段</p>
+            <!-- <p class="step-subtitle">请选择您的预订日期和时间段</p> -->
           </div>
 
           <div class="time-selection">
@@ -879,10 +879,10 @@ export default {
     })
 
     const serviceFee = computed(() => Math.round(venuePrice.value * 0.1))
-    const equipmentCost = computed(() => (bookingPeople.value > 10 ? 50 : 0))
+    const equipmentCost = computed(() => 0)
     // const discount = computed(() => selectedCoupon.value?.value || 0)
-    const totalPrice = computed(() => venuePrice.value + serviceFee.value + equipmentCost.value)
-    const originalPrice = computed(() => venuePrice.value + serviceFee.value + equipmentCost.value)
+    const totalPrice = computed(() => venuePrice.value + serviceFee.value)
+    const originalPrice = computed(() => venuePrice.value + serviceFee.value)
     const maxPeople = computed(() => venueInfo.value.capacity || 50)
     const selectedTimeSlots = computed(() =>
       timeSlots.value.filter((slot) => selectedSlots.value.includes(slot.id)),
@@ -985,12 +985,12 @@ export default {
 
   :deep(.el-steps) {
     .el-step__head.is-process {
-      color: #667eea;
-      border-color: #667eea;
+      color: #47daff;
+      border-color: #47daff;
     }
 
     .el-step__title.is-process {
-      color: #667eea;
+      color: #47daff;
       font-weight: 600;
     }
   }
@@ -999,7 +999,7 @@ export default {
 .step-content {
   background: white;
   border-radius: 20px;
-  padding: 40px;
+  padding: 5px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 
   @media (max-width: 768px) {
@@ -1017,7 +1017,7 @@ export default {
     margin: 0 0 10px 0;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 30px;
 
     i {
       color: #667eea;
@@ -1028,6 +1028,7 @@ export default {
     color: #64748b;
     font-size: 14px;
     margin: 0;
+    gap: 30px;
   }
 }
 
@@ -1060,6 +1061,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  padding: 0 20px;
 
   h3 {
     font-size: 18px;
@@ -1151,7 +1153,7 @@ export default {
   }
 
   &.selected {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, rgb(16, 205, 222) 100%);
     color: white;
 
     .day-number,
@@ -1225,7 +1227,7 @@ export default {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 
     h3 {
       font-size: 18px;
@@ -1262,7 +1264,7 @@ export default {
   background: #f8fafc;
   border: 2px solid #e2e8f0;
   border-radius: 12px;
-  padding: 15px;
+  padding: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -1275,18 +1277,18 @@ export default {
   }
 
   &.selected {
-    border-color: #667eea;
+    border-color: #47daff;
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
 
     .slot-time {
       .slot-range {
-        color: #667eea;
+        color: #1e293b;
       }
     }
 
     .slot-info {
       .slot-price {
-        color: #667eea;
+        color: #10b981;
       }
     }
   }
@@ -1553,7 +1555,7 @@ export default {
     .total-value {
       font-size: 28px;
       font-weight: 700;
-      color: #667eea;
+      color: #c3c000;
     }
   }
 

@@ -1,7 +1,19 @@
 <template>
   <div class="venue-card" @click="$emit('click')">
     <!-- 场馆图片 -->
-    <div class="card-image" :style="{ backgroundImage: `url(${venue.image || defaultImage})` }">
+    <div class="card-image">
+      <img
+        v-if="venue.image"
+        :src="venue.image"
+        :alt="venue.name"
+        @error="handleImageError"
+        @load="handleImageLoad"
+        style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px 8px 0 0"
+      />
+      <div v-if="!venue.image" class="no-image">
+        <div class="no-image-icon">🏟️</div>
+        <div class="no-image-text">暂无图片</div>
+      </div>
       <div class="image-overlay"></div>
       <div class="venue-type">{{ venue.type || '未知类型' }}</div>
       <div class="venue-status" :class="getStatusClass(venue.status)">
@@ -105,7 +117,22 @@ export default {
     },
 
     handleBook() {
+      // 先触发事件通知父组件
       this.$emit('booking', this.venue)
+
+      // 检查是否登录，与场馆详情页保持一致
+      const token = localStorage.getItem('token')
+      if (!token) {
+        this.$message.warning('请先登录')
+        this.$router.push('/login')
+        return
+      }
+
+      // 跳转到订单页面，与预订页面的handleBooking方法保持一致
+      this.$router.push({
+        path: '/Order',
+        query: { venueId: this.venue.id },
+      })
     },
   },
 }

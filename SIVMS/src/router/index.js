@@ -140,7 +140,7 @@ const routes = [
   {
     path: '/reviews',
     name: 'VenueReviews',
-    component: () => import('../views/enueReviews/enueReviews.vue'),
+    component: () => import('../views/venueReviews/venueReviews.vue'),
     meta: { title: '场馆评价' },
   },
   // router/index.js
@@ -190,9 +190,76 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/reviewManage',
+    name: 'ReviewManage',
+    component: () => import('../views/admin/ReviewManage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/refundManage',
+    name: 'RefundManage',
+    component: () => import('../views/admin/RefundManage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/reviewComponents',
     name: 'ReviewComponents',
     component: () => import('../components/ReviewComponent.vue'),
+  },
+  {
+    path: '/my-reviews',
+    name: 'MyReviews',
+    component: () => import('../views/MyReviews/MyReviews.vue'),
+    meta: { requiresAuth: true, title: '我的评论' },
+  },
+  // 通知管理页面
+  {
+    path: '/notice-manage',
+    name: 'NoticeManage',
+    component: () => import('../views/admin/NoticeManage.vue'),
+    meta: { requiresAuth: true, title: '通知管理' },
+  },
+  // 用户管理页面
+  {
+    path: '/user-manage',
+    name: 'UserManage',
+    component: () => import('../views/admin/UserManage.vue'),
+    meta: { requiresAuth: true, title: '用户管理' },
+  },
+  // 故障申报页面
+  {
+    path: '/fault/report',
+    name: 'FaultReport',
+    component: () => import('../views/Fault/FaultReport.vue'),
+    meta: { requiresAuth: true, title: '故障申报' },
+  },
+  // 故障列表页面
+  {
+    path: '/fault/list',
+    name: 'FaultList',
+    component: () => import('../views/Fault/FaultList.vue'),
+    meta: { requiresAuth: true, title: '我的故障' },
+  },
+  // 管理员故障管理页面
+  {
+    path: '/fault/management',
+    name: 'FaultManagement',
+    component: () => import('../views/admin/FaultManagement.vue'),
+    meta: { requiresAuth: true, title: '故障管理' },
+  },
+  // 公告详情页面
+  {
+    path: '/notice/:id',
+    name: 'NoticeDetail',
+    component: () => import('../views/Notice/NoticeDetail.vue'),
+    meta: { title: '公告详情' },
+  },
+  // 公告列表页面
+  {
+    path: '/notices',
+    name: 'NoticeList',
+    component: () => import('../views/Notice/NoticeList.vue'),
+    meta: { title: '公告列表' },
   },
 ]
 

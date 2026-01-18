@@ -1,9 +1,9 @@
 <template>
+  <HeaderNav />
   <div class="resource-manage-container">
     <el-card shadow="never">
       <!-- 顶部标签栏 -->
       <el-tabs v-model="activeTab" @tab-click="handleClick">
-
         <!-- 标签1：场馆管理 -->
         <el-tab-pane label="场馆管理" name="venue">
           <template #label>
@@ -28,6 +28,29 @@
           <EquipmentManage />
         </el-tab-pane>
 
+        <!-- 标签3：评论管理 -->
+        <el-tab-pane label="评论管理" name="review">
+          <template #label>
+            <span class="custom-tabs-label">
+              <el-icon><Star /></el-icon>
+              <span> 评论管理</span>
+            </span>
+          </template>
+          <!-- 引入评论组件 -->
+          <ReviewManage />
+        </el-tab-pane>
+
+        <!-- 标签4：公告管理 -->
+        <el-tab-pane label="公告管理" name="notice">
+          <template #label>
+            <span class="custom-tabs-label">
+              <el-icon><Bell /></el-icon>
+              <span> 公告管理</span>
+            </span>
+          </template>
+          <!-- 引入公告组件 -->
+          <NoticeManage />
+        </el-tab-pane>
       </el-tabs>
     </el-card>
   </div>
@@ -35,13 +58,14 @@
 
 <script setup>
 import { ref } from 'vue'
-import { Location, Basketball } from '@element-plus/icons-vue' // 引入图标
+import { Location, Basketball, Star, Bell } from '@element-plus/icons-vue' // 引入图标
 
-// 引入你之前写好的两个组件
-// 请根据你的实际文件路径调整 import 路径
+// 引入管理组件
 import VenueManage from './VenueManage.vue'
 import EquipmentManage from './EquipmentManage.vue'
-
+import ReviewManage from './ReviewManage.vue'
+import NoticeManage from './NoticeManage.vue'
+import HeaderNav from '../Home/components/HeaderNav/HeaderNav.vue'
 // 默认激活的标签页
 const activeTab = ref('venue')
 

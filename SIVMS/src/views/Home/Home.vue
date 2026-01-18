@@ -7,18 +7,18 @@
     <div class="main-content">
       <!-- 轮播图区域 -->
       <section class="hero-section">
-        <HeroBanner :banners="banners" />
+        <HeroBanner :banners="banners" :loading="bannersLoading" />
       </section>
 
       <!-- 公告和活动通知 -->
       <section class="announcement-section">
         <div class="section-header">
-          <h2><i class="el-icon-message"></i> 最新动态</h2>
-          <el-link type="primary" :underline="false" @click="viewAll">
-            查看更多 <i class="el-icon-arrow-right"></i>
-          </el-link>
+          <h2>
+            <el-icon><Message /></el-icon> 最新动态
+          </h2>
+          
         </div>
-        <Announcement :notices="notices" />
+        <Announcement :notices="notices" :loading="noticesLoading" />
       </section>
 
       <!-- 快捷操作 -->
@@ -29,12 +29,14 @@
       <!-- 场馆展示 -->
       <section class="venues-section">
         <div class="section-header">
-          <h2><i class="el-icon-location-information"></i> 推荐场馆</h2>
+          <h2>
+            <el-icon><Location /></el-icon> 推荐场馆
+          </h2>
           <el-button type="primary" plain @click="viewAllVenues">
-            <i class="el-icon-view"></i> 查看所有场馆
+            <el-icon><View /></el-icon> 查看所有场馆
           </el-button>
         </div>
-        <VenueList :venues="featuredVenues" />
+        <RecommendedVenues @venue-click="goToVenueDetail" @booking-click="handleBooking" />
       </section>
 
       <div>
@@ -42,7 +44,9 @@
         <footer class="home-footer">
           <div class="footer-content">
             <div class="footer-section">
-              <h3><i class="el-icon-s-opportunity"></i> 体育场馆综合管理系统</h3>
+              <h3>
+                <el-icon><Star /></el-icon> 体育场馆综合管理系统
+              </h3>
               <p>智慧管理 · 便捷预约 · 高效运营</p>
               <p>为您提供最优质的体育场馆服务体验</p>
             </div>
@@ -64,21 +68,36 @@
             </div>
           </div>
           <div class="copyright">
-            © 2025 体育场馆综合管理系统. All rights reserved.
+            2025 体育场馆综合管理系统. All rights reserved.
             <div>
               <img
                 src="https://beian.mps.gov.cn/web/assets/logo01.6189a29f.png"
                 alt="渝公网安备"
-                style="width: 20px; height: 20px; margin-right: 5px"
+                style="width: 20px; height: 20px; margin-right: 5px; vertical-align: middle"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';"
               />
+              <span
+                style="
+                  display: none;
+                  width: 20px;
+                  height: 20px;
+                  background: #1e40af;
+                  border-radius: 3px;
+                  margin-right: 5px;
+                  vertical-align: middle;
+                "
+              ></span>
               <a
                 href="https://beian.mps.gov.cn/#/query/webSearch"
                 target="_blank"
-                style="color: aliceblue"
+                style="color: aliceblue; text-decoration: none"
               >
                 渝公网安备50024002000227号</a
               ><span> · </span>
-              <a href="https://beian.miit.gov.cn/" target="_blank" style="color: aliceblue"
+              <a
+                href="https://beian.miit.gov.cn/"
+                target="_blank"
+                style="color: aliceblue; text-decoration: none"
                 >渝ICP备2025076592号-1</a
               >
             </div>
@@ -93,11 +112,14 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Message, ArrowRight, Location, View, Star } from '@element-plus/icons-vue'
+import { getActiveBanners } from '@/api/banner'
+import { getLatestNotices } from '@/api/notice'
 import HeaderNav from './components/HeaderNav/HeaderNav.vue'
 import HeroBanner from './components/HeroBanner/HeroBanner.vue'
 import Announcement from './components/Announcement/Announcement.vue'
 import QuickActions from './components/QuickActions/QuickActions.vue'
-import VenueList from './components/VenueList/VenueList.vue'
+import RecommendedVenues from '@/components/RecommendedVenues/RecommendedVenues.vue'
 
 export default {
   name: 'HomePage',
@@ -106,70 +128,68 @@ export default {
     HeroBanner,
     Announcement,
     QuickActions,
-    VenueList,
+    RecommendedVenues,
   },
   setup() {
     const router = useRouter()
 
-    // 轮播图数据
-    const banners = ref([
-      {
-        id: 1,
-        title: '全新篮球馆正式开放',
-        description: '专业级篮球场地，配备最新设施',
-        image:
-          'https://images.unsplash.com/photo-1546519638-68e109498ffc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
-        link: '/venues/1',
-      },
-      {
-        id: 2,
-        title: '游泳馆暑期特惠',
-        description: '清凉一夏，泳池月卡限时优惠',
-        image:
-          'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
-        link: '/venues/2',
-      },
-      {
-        id: 3,
-        title: '健身中心全新升级',
-        description: '引进国际先进健身设备',
-        image:
-          'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80',
-        link: '/venues/3',
-      },
-    ])
-
     // 公告数据
-    const notices = ref([
-      {
-        type: 'announcement',
-        title: '系统维护通知',
-        content: '系统将于本周六凌晨2:00-4:00进行维护',
-        time: '2024-01-10',
-        icon: 'el-icon-message',
-      },
-      {
-        type: 'activity',
-        title: '新年特别活动',
-        content: '春节期间所有场馆享受8折优惠',
-        time: '2024-01-08',
-        icon: 'el-icon-star',
-      },
-      {
-        type: 'update',
-        title: '系统功能更新',
-        content: '新增了场馆评价功能，欢迎体验',
-        time: '2024-01-05',
-        icon: 'el-icon-refresh',
-      },
-    ])
+    const notices = ref([])
+    const noticesLoading = ref(false)
+
+    // 获取公告数据
+    const fetchNotices = async () => {
+      try {
+        noticesLoading.value = true
+        // 使用专门的接口获取最新4个公告
+        const response = await getLatestNotices(4)
+        if (response.code === 200 && response.data) {
+          // 转换数据格式
+          notices.value = response.data.map((notice) => ({
+            ...notice,
+            time: formatDate(notice.publishTime || notice.createTime),
+            icon: getIconByType(notice.title),
+          }))
+        } else {
+          ElMessage.error(response.message || '获取公告失败')
+          notices.value = []
+        }
+      } catch (error) {
+        console.error('获取公告失败:', error)
+        ElMessage.error('获取公告失败')
+        notices.value = []
+      } finally {
+        noticesLoading.value = false
+      }
+    }
+
+    // 格式化日期
+    const formatDate = (dateString) => {
+      if (!dateString) return ''
+      const date = new Date(dateString)
+      return date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      })
+    }
+
+    // 根据标题获取图标
+    const getIconByType = (title) => {
+      if (title.includes('维护') || title.includes('系统')) return 'Message'
+      if (title.includes('活动') || title.includes('优惠')) return 'Star'
+      if (title.includes('更新') || title.includes('功能')) return 'Refresh'
+      if (title.includes('升级') || title.includes('设施')) return 'Tools'
+      if (title.includes('会员') || title.includes('权益')) return 'User'
+      return 'Message'
+    }
 
     // 快捷操作
     const quickActions = ref([
       {
         id: 'booking',
         title: '场馆预订',
-        icon: 'el-icon-date',
+        icon: 'Calendar',
         description: '快速预约心仪场馆',
         color: '#4facfe',
         bgColor: 'rgba(79, 172, 254, 0.1)',
@@ -177,7 +197,7 @@ export default {
       {
         id: 'orders',
         title: '我的订单',
-        icon: 'el-icon-document',
+        icon: 'Document',
         description: '查看订单详情',
         color: '#00f2fe',
         bgColor: 'rgba(0, 242, 254, 0.1)',
@@ -185,7 +205,7 @@ export default {
       {
         id: 'equipment',
         title: '器材借用',
-        icon: 'el-icon-basketball',
+        icon: 'Star',
         description: '申请借用运动器材',
         color: '#00f2fe',
         bgColor: 'rgba(0, 242, 254, 0.1)',
@@ -193,64 +213,36 @@ export default {
       {
         id: 'search',
         title: '场馆搜索',
-        icon: 'el-icon-search',
+        icon: 'Search',
         description: '快速查找场馆',
         color: '#00f2fe',
         bgColor: 'rgba(0, 242, 254, 0.1)',
       },
     ])
 
-    // 推荐场馆
-    const featuredVenues = ref([
-      {
-        id: 1,
-        name: '标准篮球馆',
-        type: '篮球',
-        location: '体育中心A区',
-        capacity: '50人',
-        price: 200,
-        rating: 4.8,
-        image:
-          'https://images.unsplash.com/photo-1546519638-68e109498ffc?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-        status: 'available',
-      },
-      {
-        id: 2,
-        name: '专业游泳馆',
-        type: '游泳',
-        location: '游泳中心',
-        capacity: '100人',
-        price: 150,
-        rating: 4.9,
-        image:
-          'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-        status: 'available',
-      },
-      {
-        id: 3,
-        name: '综合健身中心',
-        type: '健身',
-        location: '健身大楼',
-        capacity: '200人',
-        price: 300,
-        rating: 4.7,
-        image:
-          'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-        status: 'available',
-      },
-      {
-        id: 4,
-        name: '室内网球场',
-        type: '网球',
-        location: '网球中心',
-        capacity: '30人',
-        price: 250,
-        rating: 4.6,
-        image:
-          'https://images.unsplash.com/photo-1622279457486-62dcc4a431f6?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-        status: 'maintenance',
-      },
-    ])
+    // 轮播图数据
+    const banners = ref([])
+    const bannersLoading = ref(false)
+
+    // 获取轮播图数据
+    const fetchBanners = async () => {
+      try {
+        bannersLoading.value = true
+        const response = await getActiveBanners()
+        if (response.code === 200) {
+          banners.value = response.data || []
+        } else {
+          ElMessage.error(response.message || '获取轮播图失败')
+          banners.value = []
+        }
+      } catch (error) {
+        console.error('获取轮播图失败:', error)
+        ElMessage.error('获取轮播图失败')
+        banners.value = []
+      } finally {
+        bannersLoading.value = false
+      }
+    }
 
     // 处理导航点击
     const handleNavClick = (navItem) => {
@@ -285,7 +277,7 @@ export default {
 
     // 查看所有
     const viewAll = () => {
-      router.push('/notices')
+      router.push('/resourceManage')
     }
 
     // 查看所有场馆
@@ -293,20 +285,49 @@ export default {
       router.push('/venues')
     }
 
+    // 跳转到场馆详情
+    const goToVenueDetail = (venue) => {
+      // 修复地址错误，确保传递正确的venue.id
+      if (venue && venue.id) {
+        router.push(`/venue/details/${venue.id}`)
+      } else {
+        console.error('场馆信息无效:', venue)
+        ElMessage.error('场馆信息无效')
+      }
+    }
+
+    // 立即预订功能
+    const handleBooking = (venue) => {
+      if (venue && venue.id) {
+        router.push({
+          path: '/Order',
+          query: { venueId: venue.id },
+        })
+      } else {
+        console.error('场馆信息无效:', venue)
+        ElMessage.error('场馆信息无效')
+      }
+    }
+
     // 生命周期
     onMounted(() => {
-      console.log('Home页面加载完成')
+      fetchBanners()
+      fetchNotices()
+      // 组件内部会自动加载数据
     })
 
     return {
       banners,
+      bannersLoading,
       notices,
+      noticesLoading,
       quickActions,
-      featuredVenues,
       handleNavClick,
       handleQuickAction,
       viewAll,
       viewAllVenues,
+      goToVenueDetail,
+      handleBooking,
     }
   },
 }
@@ -351,7 +372,7 @@ export default {
       align-items: center;
       gap: 10px;
 
-      i {
+      .el-icon {
         color: #4facfe;
         font-size: 1.6rem;
       }
@@ -363,12 +384,12 @@ export default {
       align-items: center;
       gap: 5px;
 
-      i {
+      .el-icon {
         transition: transform 0.3s ease;
       }
 
       &:hover {
-        i {
+        .el-icon {
           transform: translateX(3px);
         }
       }
@@ -405,7 +426,7 @@ export default {
           align-items: center;
           gap: 10px;
 
-          i {
+          .el-icon {
             font-size: 1.5rem;
           }
         }

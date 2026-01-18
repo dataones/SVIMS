@@ -16,7 +16,7 @@
           <p class="action-desc">{{ action.description }}</p>
         </div>
         <div class="action-arrow">
-          <i class="el-icon-arrow-right"></i>
+          <el-icon><ArrowRight /></el-icon>
         </div>
       </div>
     </div>
@@ -24,13 +24,18 @@
 </template>
 
 <script>
+import { ArrowRight } from '@element-plus/icons-vue'
+
 export default {
   name: 'QuickActions',
+  components: {
+    ArrowRight,
+  },
   props: {
     actions: {
       type: Array,
-      default: () => []
-    }
+      default: () => [],
+    },
   },
   emits: ['action-click'],
   setup(props, { emit }) {
@@ -39,9 +44,9 @@ export default {
     }
 
     return {
-      handleClick
+      handleClick,
     }
-  }
+  },
 }
 </script>
 

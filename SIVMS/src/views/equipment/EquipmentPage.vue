@@ -7,17 +7,17 @@
     <div v-if="!isLogin" class="login-required">
       <div class="login-prompt">
         <div class="prompt-icon">
-          <i class="el-icon-box"></i>
+          <el-icon><Box /></el-icon>
         </div>
         <h2>请先登录</h2>
         <p>租赁器材需要登录账号，请先登录</p>
         <div class="action-buttons">
           <el-button type="primary" size="large" @click="goToLogin" class="login-btn">
-            <i class="el-icon-user"></i>
+            <el-icon><User /></el-icon>
             立即登录
           </el-button>
           <el-button type="success" size="large" @click="goToRegister" plain>
-            <i class="el-icon-user-plus"></i>
+            <el-icon><UserFilled /></el-icon>
             注册账号
           </el-button>
         </div>
@@ -30,14 +30,14 @@
       <div class="page-header">
         <div class="header-left">
           <h1 class="page-title">
-            <i class="el-icon-box"></i>
+            <el-icon><Box /></el-icon>
             器材租赁
           </h1>
           <p class="page-subtitle">选择您需要的运动器材，轻松租赁</p>
         </div>
         <div class="header-right">
           <el-button type="info" size="large" @click="viewMyRentals">
-            <i class="el-icon-shopping-cart-2"></i>
+            <el-icon><ShoppingCart /></el-icon>
             我的借用记录
           </el-button>
         </div>
@@ -55,7 +55,7 @@
               @input="handleSearch"
             >
               <template #prefix>
-                <i class="el-icon-search"></i>
+                <el-icon><Search /></el-icon>
               </template>
             </el-input>
           </div>
@@ -119,7 +119,7 @@
               :disabled="!hasFilters"
               class="reset-btn"
             >
-              <i class="el-icon-refresh"></i>
+              <el-icon><Refresh /></el-icon>
               重置筛选
             </el-button>
           </div>
@@ -131,7 +131,7 @@
         <div class="process-steps">
           <div class="process-step">
             <div class="step-icon">
-              <i class="el-icon-search"></i>
+              <el-icon><Search /></el-icon>
             </div>
             <div class="step-info">
               <div class="step-title">选择器材</div>
@@ -139,11 +139,11 @@
             </div>
           </div>
           <div class="process-arrow">
-            <i class="el-icon-arrow-right"></i>
+            <el-icon><ArrowRight /></el-icon>
           </div>
           <div class="process-step">
             <div class="step-icon">
-              <i class="el-icon-document"></i>
+              <el-icon><Document /></el-icon>
             </div>
             <div class="step-info">
               <div class="step-title">提交申请</div>
@@ -151,11 +151,11 @@
             </div>
           </div>
           <div class="process-arrow">
-            <i class="el-icon-arrow-right"></i>
+            <el-icon><ArrowRight /></el-icon>
           </div>
           <div class="process-step">
             <div class="step-icon">
-              <i class="el-icon-circle-check"></i>
+              <el-icon><CircleCheck /></el-icon>
             </div>
             <div class="step-info">
               <div class="step-title">等待审核</div>
@@ -176,7 +176,7 @@
         <!-- 空状态 -->
         <div v-else-if="filteredEquipment.length === 0" class="empty-state">
           <div class="empty-icon">
-            <i class="el-icon-box"></i>
+            <el-icon><Box /></el-icon>
           </div>
           <h3>未找到符合条件的器材</h3>
           <p>尝试更换搜索关键词或筛选条件</p>
@@ -209,25 +209,25 @@
 
               <div class="equipment-spec">
                 <div class="spec-item" v-if="equipment.specification">
-                  <i class="el-icon-s-grid"></i>
+                  <el-icon><Grid /></el-icon>
                   <span>规格：{{ equipment.specification }}</span>
                 </div>
                 <div class="spec-item" v-if="equipment.brand">
-                  <i class="el-icon-medal"></i>
+                  <el-icon><Medal /></el-icon>
                   <span>品牌：{{ equipment.brand }}</span>
                 </div>
                 <div class="spec-item">
-                  <i class="el-icon-box"></i>
+                  <el-icon><Box /></el-icon>
                   <span>总库存：{{ equipment.totalStock }}件</span>
                 </div>
                 <div class="spec-item">
-                  <i class="el-icon-shopping-cart-2"></i>
+                  <el-icon><ShoppingCart /></el-icon>
                   <span>已租出：{{ equipment.rentedStock }}件</span>
                 </div>
               </div>
 
               <p class="equipment-update-time">
-                <i class="el-icon-time"></i>
+                <el-icon><Clock /></el-icon>
                 更新时间：{{ formatDateTime(equipment.updateTime) }}
               </p>
             </div>
@@ -256,7 +256,7 @@
                   class="rent-btn"
                   :loading="rentingEquipmentId === equipment.id"
                 >
-                  <i class="el-icon-box"></i>
+                  <el-icon><Box /></el-icon>
                   {{ getAvailableStock(equipment) > 0 ? '立即借用' : '暂无库存' }}
                 </el-button>
               </div>
@@ -264,11 +264,11 @@
               <!-- 快速租赁提示 -->
               <div class="quick-rental-tips" v-if="getAvailableStock(equipment) > 0">
                 <div class="tips-item">
-                  <i class="el-icon-circle-check"></i>
+                  <el-icon><CircleCheck /></el-icon>
                   <span>支持自取使用</span>
                 </div>
                 <div class="tips-item">
-                  <i class="el-icon-circle-check"></i>
+                  <el-icon><CircleCheck /></el-icon>
                   <span>申请后等待管理员审核</span>
                 </div>
               </div>
@@ -331,7 +331,7 @@
 
           <div class="rent-notice">
             <div class="notice-header">
-              <i class="el-icon-warning-outline"></i>
+              <el-icon><Warning /></el-icon>
               <span>借用须知</span>
             </div>
             <div class="notice-content">
@@ -358,7 +358,9 @@
     <footer class="home-footer">
       <div class="footer-content">
         <div class="footer-section">
-          <h3><i class="el-icon-s-opportunity"></i> 体育场馆综合管理系统</h3>
+          <h3>
+            <el-icon><Star /></el-icon> 体育场馆综合管理系统
+          </h3>
           <p>智慧管理 · 便捷预约 · 高效运营</p>
           <p>为您提供最优质的体育场馆服务体验</p>
         </div>
@@ -407,6 +409,22 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import {
+  Box,
+  User,
+  UserFilled,
+  Search,
+  Refresh,
+  Document,
+  CircleCheck,
+  ArrowRight,
+  Grid,
+  Medal,
+  ShoppingCart,
+  Clock,
+  Warning,
+  Star,
+} from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { fetchEquipments, applyRental } from '@/api/equipment'
 import NavBar from '../Home/components/HeaderNav/HeaderNav.vue'
@@ -416,6 +434,20 @@ export default {
 
   components: {
     NavBar,
+    Box,
+    User,
+    UserFilled,
+    Search,
+    Refresh,
+    Document,
+    CircleCheck,
+    ArrowRight,
+    Grid,
+    Medal,
+    ShoppingCart,
+    Clock,
+    Warning,
+    Star,
   },
 
   setup() {
