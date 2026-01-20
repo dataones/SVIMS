@@ -1,4 +1,4 @@
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { register, sendSms } from '@/api/auth'
@@ -50,21 +50,122 @@ export default function useRegister() {
     return 'strong'
   })
 
-  const passwordStrengthText = computed(() => {
-    const strength = passwordStrength.value
-    if (strength <= 2) return '密码强度：弱'
-    if (strength <= 3) return '密码强度：中'
-    return '密码强度：强'
-  })
+  // const passwordStrengthText = computed(() => {
+  //   const strength = passwordStrength.value
+  //   if (strength <= 2) return '密码强度：弱'
+  //   if (strength <= 3) return '密码强度：中'
+  //   return '密码强度：强'
+  // })
 
   // 用户类型显示文本
-  const userTypeText = computed(() => {
-    const typeMap = {
-      ordinary: '普通用户',
-      venue_admin: '场馆管理员',
+  // const userTypeText = computed(() => {
+  //   const typeMap = {
+  //     ordinary: '普通用户',
+  //     venue_admin: '场馆管理员',
+  //   }
+  //   return typeMap[form.userType] || '普通用户'
+  // })
+
+  // 处理密码输入，禁止中文
+  const handlePasswordInput = (value) => {
+    // 过滤掉中文字符和空白字符（包括空格、制表符等）
+    const filteredValue = value.replace(/[\u4e00-\u9fa5]|\s+/g, '')
+    // 直接写回，保证无效字符被移除
+    form.password = filteredValue
+  }
+
+  // 处理确认密码输入，禁止中文
+  const handleConfirmPasswordInput = (value) => {
+    // 过滤掉中文字符和空白字符（包括空格、制表符等）
+    const filteredValue = value.replace(/[\u4e00-\u9fa5]|\s+/g, '')
+    form.confirmPassword = filteredValue
+  }
+
+  // 处理手机号输入：移除非数字字符并限制最大长度为11位
+  const handlePhoneInput = (value) => {
+    const digits = String(value).replace(/\D+/g, '').slice(0, 11)
+    form.phone = digits
+  }
+
+  // 处理粘贴到手机号输入框的内容：仅保留数字并限制长度
+  const handlePhonePaste = (event) => {
+    if (!event) return
+    try {
+      event.preventDefault && event.preventDefault()
+      const paste = (event.clipboardData || window.clipboardData).getData('text') || ''
+      const digits = String(paste).replace(/\D+/g, '').slice(0, 11)
+      // 将粘贴的数字合并到当前值并截断到11位
+      const combined = (String(form.phone || '') + digits).replace(/\D+/g, '').slice(0, 11)
+      form.phone = combined
+    } catch (e) {
+      // 兜底：如果事件结构不标准，尝试从 window 剪贴板读取
+      try {
+        const pasteFallback = (window.clipboardData && window.clipboardData.getData('Text')) || ''
+        form.phone = String(pasteFallback).replace(/\D+/g, '').slice(0, 11)
+      } catch (err) {
+        // ignore
+      }
     }
-    return typeMap[form.userType] || '普通用户'
-  })
+  }
+
+  // 处理 compositionend（输入法输入结束）场景，确保最终值合规
+  const handlePhoneCompositionEnd = (event) => {
+    try {
+      const val = event?.target?.value ?? form.phone
+      handlePhoneInput(val)
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  // 监听 form.phone，任何场景下（粘贴、拖拽、输入法等）都进行清理，作为兜底
+  watch(
+    () => form.phone,
+    (val) => {
+      const digits = String(val || '')
+        .replace(/\D+/g, '')
+        .slice(0, 11)
+      if (digits !== val) {
+        form.phone = digits
+      }
+    },
+  )
+
+  // 键盘拦截：阻止非数字按键输入（保留控制键、导航键、组合键）
+  const handlePhoneKeydown = (event) => {
+    if (!event) return
+    const key = event.key
+    // 允许的控制和导航键
+    const allowed = [
+      'Backspace',
+      'Delete',
+      'ArrowLeft',
+      'ArrowRight',
+      'ArrowUp',
+      'ArrowDown',
+      'Tab',
+      'Enter',
+      'Home',
+      'End',
+    ]
+    if (allowed.includes(key)) return
+    // 允许组合键（Ctrl/Cmd + ...）用于复制粘贴等
+    if (event.ctrlKey || event.metaKey) return
+    // 如果是单字符按键且不是数字，则阻止输入
+    if (key.length === 1 && !/^[0-9]$/.test(key)) {
+      event.preventDefault()
+    }
+    // 如果输入长度已达11并且按下的是数字，也阻止
+    if (/^[0-9]$/.test(key) && String(form.phone || '').length >= 11) {
+      event.preventDefault()
+    }
+  }
+
+  // 处理邮箱输入：去除空白并转为小写
+  const handleEmailInput = (value) => {
+    const cleaned = String(value).trim().replace(/\s+/g, '').toLowerCase()
+    form.email = cleaned
+  }
 
   // 验证规则
   const validateUsername = (rule, value, callback) => {
@@ -252,6 +353,11 @@ export default function useRegister() {
     router.push('/login')
   }
 
+  // 返回首页
+  const goToHome = () => {
+    router.push('/')
+  }
+
   return {
     form,
     formStep1Ref,
@@ -262,13 +368,19 @@ export default function useRegister() {
     smsCountdown,
     agreementChecked,
     passwordStrengthClass,
-    passwordStrengthText,
-    userTypeText,
     isPhoneValid,
+    handlePasswordInput,
+    handleConfirmPasswordInput,
     prevStep,
     nextStep,
     sendSmsCode,
     goToLogin,
+    goToHome,
+    handlePhoneInput,
+    handlePhonePaste,
+    handlePhoneKeydown,
+    handlePhoneCompositionEnd,
+    handleEmailInput,
     User,
     Phone,
     Message,

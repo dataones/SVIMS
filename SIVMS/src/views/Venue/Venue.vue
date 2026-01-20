@@ -188,10 +188,9 @@ export default {
 
     handleVenueClick(venue) {
       console.log('点击场馆:', venue)
-      // 跳转到场馆详情页
+      // 跳转到场馆详情页（移除 query 参数）
       this.$router.push({
-        path: `/venue/detail/${venue.id}`,
-        query: { from: 'list' },
+        path: `/venue/details/${venue.id}`,
       })
     },
   },

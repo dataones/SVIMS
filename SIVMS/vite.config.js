@@ -4,10 +4,7 @@ import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
 export default defineConfig({
-  plugins: [
-    vue(),
-    vueDevTools(),
-  ],
+  plugins: [vue(), vueDevTools()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -30,8 +27,16 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'element-plus': ['element-plus'],
+        // 修改这里：将对象改为函数
+        manualChunks(id) {
+          // 将 element-plus 单独打包
+          if (id.includes('node_modules/element-plus')) {
+            return 'element-plus'
+          }
+          // 其他 node_modules 依赖打包到 vendor
+          if (id.includes('node_modules')) {
+            return 'vendor'
+          }
         },
       },
     },

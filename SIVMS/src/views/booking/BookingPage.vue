@@ -140,9 +140,6 @@
               >
                 {{ getStatusText(venue.status) }}
               </div>
-              <div class="venue-type" :style="getTypeStyle()">
-                {{ venue.type || '综合场馆' }}
-              </div>
             </div>
 
             <!-- 场馆信息 -->
@@ -193,7 +190,7 @@
               <div class="price-info">
                 <div class="current-price">
                   <span class="price-label">¥</span>
-                  <span class="price-value">{{ venue.price || '150' }}</span>
+                  <span class="price-value">{{ venue.price }}</span>
                   <span class="price-unit">/小时</span>
                 </div>
                 <div v-if="venue.originalPrice" class="original-price">
@@ -374,36 +371,35 @@ export default {
       if (!isLogin.value) return
 
       try {
-        console.log('开始获取用户预订数据...')
-
         // 先尝试使用getUserStats API
         try {
           const res = await getUserStats()
-          console.log('用户统计数据响应:', res)
 
           if (res.code === 200 && res.data) {
             userStats.value = res.data
-            console.log('设置用户统计数据:', userStats.value)
             return
           }
-        } catch (statsError) {
-          console.warn('getUserStats API调用失败，尝试使用预订数据:', statsError)
-        }
+        } catch (statsError) {}
 
         // 如果getUserStats失败，使用getMyBookings来统计
         const bookingsRes = await getMyBookings()
-        console.log('用户预订数据响应:', bookingsRes)
 
         if (bookingsRes.code === 200 && bookingsRes.data) {
           const bookingCount = Array.isArray(bookingsRes.data) ? bookingsRes.data.length : 0
+
           userStats.value = {
+            balance: 0,
             bookingCount: bookingCount,
             favoriteCount: 0, // 暂时设为0，后续可以添加收藏API
           }
-          console.log('通过预订数据设置统计:', userStats.value)
         }
       } catch (error) {
         console.error('获取用户统计数据失败:', error)
+        userStats.value = {
+          balance: 0,
+          bookingCount: 0,
+          favoriteCount: 0,
+        }
       }
     }
 
@@ -463,6 +459,32 @@ export default {
 
         filteredVenues.value = venues.value
         total.value = response.data.total || venues.value.length
+
+        // Force image repaint to avoid transient visual artifacts
+        const forceImageRepaint = () => {
+          requestAnimationFrame(() => {
+            const imgs = document.querySelectorAll('.booking-page .venue-image img')
+            imgs.forEach((img) => {
+              if (img.complete) {
+                img.style.transform = 'translateZ(0)'
+                void img.offsetHeight
+                img.style.transform = ''
+              } else {
+                img.addEventListener(
+                  'load',
+                  () => {
+                    img.style.transform = 'translateZ(0)'
+                    void img.offsetHeight
+                    img.style.transform = ''
+                  },
+                  { once: true },
+                )
+              }
+            })
+          })
+        }
+
+        forceImageRepaint()
       } catch (error) {
         console.error('加载场馆失败:', error)
         ElMessage.error('加载场馆列表失败')
@@ -576,7 +598,7 @@ export default {
     }
 
     // 获取类型样式（内联样式，确保刷新后也能显示）
-    const getTypeStyle = () => {
+    const getTypeStyle = (venue) => {
       return {
         position: 'absolute',
         bottom: '12px',
@@ -1123,6 +1145,8 @@ export default {
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s ease;
+    display: block; /* 防止 img 出现空白行 */
+    border-radius: 12px; /* 确保图片和容器圆角一致 */
   }
 
   &:hover img {
@@ -1135,6 +1159,44 @@ export default {
 
   .venue-image .venue-type {
     /* 样式主要通过内联样式应用 */
+  }
+
+  /* 如果存在旧的 image-overlay 元素（子组件内），使用深度选择器强制覆盖 */
+  ::v-deep .image-overlay {
+    display: none !important;
+    background: transparent !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
+  }
+
+  /* 确保图片位于较低但可见的层级（让状态/类型浮层可见） */
+  ::v-deep .venue-image img {
+    position: relative !important;
+    z-index: 1 !important;
+    display: block !important;
+  }
+
+  /* 提升状态/类型标签层级，确保它们始终可见 */
+  ::v-deep .venue-status {
+    z-index: 12 !important;
+  }
+
+  ::v-deep .venue-type {
+    z-index: 11 !important;
+  }
+
+  /* 兜底：隐藏常见加载占位类（如果存在） */
+  ::v-deep .skeleton,
+  ::v-deep .lazyload-placeholder,
+  ::v-deep .loading-placeholder {
+    display: none !important;
+    background: transparent !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
   }
 }
 

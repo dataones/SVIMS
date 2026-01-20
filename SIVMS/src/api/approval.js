@@ -24,3 +24,15 @@ export function getPendingRefunds() {
   })
 }
 
+// 审核退款
+export function auditRefund(id, approved, auditRemark) {
+  return request({
+    url: `/api/admin/approval/refund/${id}`,
+    method: 'put',
+    data: {
+      approved,
+      auditRemark
+    }
+  })
+}
+

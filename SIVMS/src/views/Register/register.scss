@@ -28,6 +28,17 @@
       radial-gradient(circle at 70% 100%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
     z-index: 0;
   }
+
+  // 响应式布局
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 }
 
 .sport-background-elements {
@@ -83,11 +94,34 @@
   position: relative;
   z-index: 1;
 
+  // 响应式布局
+  @media (max-width: 1024px) {
+    padding: 2rem 1rem;
+    min-height: 40vh;
+  }
+
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    min-height: auto;
+  }
+
   .sport-facilities {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 2rem;
     margin-bottom: 3rem;
+
+    // 响应式布局
+    @media (max-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 480px) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
 
     .facility {
       background: rgba(255, 255, 255, 0.15);
@@ -169,7 +203,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 2rem;
+  padding: 2rem; /* 恢复原始padding */
   position: relative;
   z-index: 1;
   min-height: 100vh;
@@ -192,11 +226,11 @@
 /* 注册卡片优化 */
 .register-card {
   width: 100%;
-  max-width: 500px;
+  max-width: 520px; /* 扩大卡片宽度 */
   border: none !important;
-  border-radius: 24px !important;
+  border-radius: 20px !important;
   box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 20px 40px -12px rgba(0, 0, 0, 0.25),
     0 8px 24px rgba(79, 172, 254, 0.15) !important;
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px);
@@ -205,13 +239,31 @@
   z-index: 2;
   overflow: hidden;
   transform: translateY(0);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  padding: 0.8rem; /* 进一步减小内边距 */
+  margin-top: -35px; /* 从-15px调整到-35px，再缩小20px */
 
   &:hover {
-    transform: translateY(-5px);
+    transform: translateY(-3px);
     box-shadow:
-      0 30px 60px -12px rgba(0, 0, 0, 0.3),
-      0 12px 32px rgba(79, 172, 254, 0.2) !important;
+      0 25px 50px -12px rgba(0, 0, 0, 0.3),
+      0 10px 30px rgba(79, 172, 254, 0.2) !important;
+  }
+
+  /* 响应式调整 */
+  @media (max-width: 768px) {
+    max-width: 95%; /* 平板端占满更多宽度 */
+    margin: -35px 1rem 0; /* 保持向上移动35px */
+    padding: 1.5rem; /* 平板端减少顶部间距 */
+  }
+
+  @media (max-width: 480px) {
+    max-width: 100%; /* 手机端占满全宽 */
+    margin: -35px 0 0; /* 保持向上移动35px */
+    border-radius: 16px !important; /* 手机端减小圆角 */
+    padding: 1.2rem; /* 手机端进一步减少顶部间距 */
   }
 
   /* 顶部装饰性渐变条 */
@@ -222,10 +274,7 @@
     left: 0;
     right: 0;
     height: 6px;
-    background: linear-gradient(90deg,
-      #4facfe 0%,
-      #00f2fe 50%,
-      #4facfe 100%);
+    background: linear-gradient(90deg, #4facfe 0%, #00f2fe 50%, #4facfe 100%);
     background-size: 200% 100%;
     animation: gradientFlow 3s ease-in-out infinite;
   }
@@ -239,23 +288,66 @@
     right: 1px;
     bottom: 1px;
     border-radius: 23px;
-    background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.8) 0%,
-      rgba(255, 255, 255, 0.4) 100%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 100%);
     z-index: -1;
     pointer-events: none;
+  }
+}
+
+/* 表单头部优化 */
+.form-header {
+  text-align: center;
+  margin-bottom: 0.8rem; /* 进一步减小底部间距 */
+
+  .logo {
+    width: 40px; /* 进一步减小logo尺寸 */
+    height: 40px;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    border-radius: 8px; /* 进一步减小圆角 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.6rem; /* 进一步减小底部间距 */
+    box-shadow: 0 4px 8px rgba(79, 172, 254, 0.2); /* 进一步减小阴影 */
+
+    .el-icon {
+      font-size: 1.1rem; /* 进一步减小图标尺寸 */
+      color: white;
+    }
+  }
+
+  h2 {
+    font-size: 1rem; /* 进一步减小标题字体 */
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.3rem; /* 进一步减小底部间距 */
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  p {
+    color: #606266;
+    font-size: 0.8rem; /* 进一步减小描述字体 */
+    font-weight: 300;
+    margin: 0;
   }
 }
 
 /* 步骤条样式全面优化 */
 .register-steps {
   position: relative;
-  padding: 1.5rem 2rem 0;
-  margin-bottom: 1.5rem;
-  background: linear-gradient(to bottom,
+  padding: 0.6rem 0.8rem 0.8rem; /* 进一步减小内边距 */
+  margin-bottom: 0.8rem; /* 进一步减小底部间距 */
+  background: linear-gradient(
+    to bottom,
     rgba(248, 250, 252, 0.9) 0%,
-    rgba(248, 250, 252, 0.4) 100%);
+    rgba(248, 250, 252, 0.4) 100%
+  );
   border-bottom: 1px solid rgba(224, 224, 224, 0.3);
+  border-radius: 12px;
+  margin: 0 0.3rem 0.8rem; /* 进一步减小左右间距 */
 
   :deep(.el-steps) {
     position: relative;
@@ -272,9 +364,7 @@
         left: 50%;
         width: calc(100% - 36px);
         height: 2px;
-        background: linear-gradient(90deg,
-          rgba(79, 172, 254, 0.3) 0%,
-          rgba(0, 242, 254, 0.3) 100%);
+        background: linear-gradient(90deg, rgba(79, 172, 254, 0.3) 0%, rgba(0, 242, 254, 0.3) 100%);
         z-index: 1;
       }
 
@@ -285,9 +375,9 @@
 
     .el-step__head {
       position: relative;
-      width: 40px;
-      height: 40px;
-      font-size: 1rem;
+      width: 32px; /* 减小尺寸 */
+      height: 32px; /* 减小尺寸 */
+      font-size: 0.85rem; /* 减小字体 */
       font-weight: 600;
       z-index: 2;
 
@@ -297,35 +387,22 @@
         background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         border: none;
         box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
-
-        .el-step__icon {
-          transform: scale(1.1);
-          transition: transform 0.3s ease;
-        }
-      }
-
-      /* 等待状态 */
-      &.is-wait {
-        color: #a0aec0;
-        background: white;
-        border: 2px solid #e2e8f0;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-
-        .el-step__icon {
-          opacity: 0.7;
-        }
       }
 
       /* 完成状态 */
       &.is-finish {
-        color: #4facfe;
-        background: white;
-        border: 2px solid #4facfe;
-        box-shadow: 0 4px 12px rgba(79, 172, 254, 0.2);
+        color: white;
+        background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%);
+        border: none;
+        box-shadow: 0 4px 15px rgba(103, 194, 58, 0.4);
+      }
 
-        .el-step__icon {
-          animation: bounce 0.5s ease;
-        }
+      /* 等待状态 */
+      &.is-wait {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(79, 172, 254, 0.2);
+        color: #4facfe;
+        animation: bounce 0.5s ease;
       }
     }
 
@@ -392,9 +469,7 @@
     right: -15px;
     bottom: -15px;
     border-radius: 50%;
-    background: linear-gradient(135deg,
-      rgba(79, 172, 254, 0.3) 0%,
-      rgba(0, 242, 254, 0.3) 100%);
+    background: linear-gradient(135deg, rgba(79, 172, 254, 0.3) 0%, rgba(0, 242, 254, 0.3) 100%);
     animation: pulse 2s ease-in-out infinite;
   }
 
@@ -442,7 +517,7 @@
 
 /* 表单内容区域优化 */
 .form-content {
-  padding: 0 2rem;
+  padding: 0 1.2rem; /* 增加0.2rem内边距（约3px） */
   margin: 0;
 
   .step {
@@ -454,30 +529,14 @@
     }
   }
 
-  /* 步骤1特定样式 */
+  /* 步骤1特定样式 - 移除冲突的表单项样式 */
   .step-1 {
-    :deep(.el-form-item) {
-      margin-bottom: 2rem;
+    /* 移除与register-form冲突的样式，让register-form的样式生效 */
+  }
 
-      &:last-child {
-        margin-bottom: 1rem;
-      }
-
-      .el-form-item__label {
-        font-weight: 600;
-        color: #475569;
-        padding-bottom: 8px;
-        font-size: 1rem;
-        letter-spacing: 0.3px;
-
-        &::before {
-          color: #ef4444;
-          margin-right: 4px;
-          font-weight: bold;
-          content: '*';
-        }
-      }
-    }
+  /* 步骤2特定样式 - 移除冲突的表单项样式 */
+  .step-2 {
+    /* 移除与register-form冲突的样式 */
   }
 }
 
@@ -485,7 +544,7 @@
 :deep(.el-input) {
   .el-input__wrapper {
     border-radius: 12px;
-    padding: 14px 16px;
+    padding: 6px;
     border: 1px solid #e0e0e0;
     background: #f9f9f9;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -627,9 +686,7 @@
 .agreement-wrapper {
   margin: 2rem 0;
   padding: 1.5rem 2rem;
-  background: linear-gradient(135deg,
-    rgba(248, 250, 252, 0.8) 0%,
-    rgba(240, 249, 255, 0.8) 100%);
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.8) 0%, rgba(240, 249, 255, 0.8) 100%);
   border-radius: 16px;
   border: 1px solid rgba(79, 172, 254, 0.15);
 
@@ -727,9 +784,7 @@
 .login-section {
   text-align: center;
   padding: 1.8rem 2rem;
-  background: linear-gradient(135deg,
-    rgba(248, 250, 252, 0.9) 0%,
-    rgba(248, 250, 252, 0.5) 100%);
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.9) 0%, rgba(248, 250, 252, 0.5) 100%);
   border-radius: 0 0 24px 24px;
   border-top: 1px solid rgba(224, 224, 224, 0.3);
 
@@ -764,7 +819,8 @@
 
 /* 动画效果 */
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -784,7 +840,8 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 0.5;
   }
@@ -817,7 +874,11 @@
 }
 
 @keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
     transform: translateY(0);
   }
   40% {
@@ -992,16 +1053,12 @@
     background: rgba(30, 35, 45, 0.95);
 
     &::after {
-      background: linear-gradient(135deg,
-        rgba(30, 41, 59, 0.8) 0%,
-        rgba(30, 41, 59, 0.4) 100%);
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(30, 41, 59, 0.4) 100%);
     }
   }
 
   .register-steps {
-    background: linear-gradient(to bottom,
-      rgba(30, 41, 59, 0.9) 0%,
-      rgba(30, 41, 59, 0.4) 100%);
+    background: linear-gradient(to bottom, rgba(30, 41, 59, 0.9) 0%, rgba(30, 41, 59, 0.4) 100%);
   }
 
   .form-header {
@@ -1049,9 +1106,7 @@
   }
 
   .agreement-wrapper {
-    background: linear-gradient(135deg,
-      rgba(30, 41, 59, 0.8) 0%,
-      rgba(30, 41, 59, 0.6) 100%);
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(30, 41, 59, 0.6) 100%);
     border-color: rgba(79, 172, 254, 0.2);
 
     :deep(.el-checkbox__label) {
@@ -1060,9 +1115,7 @@
   }
 
   .login-section {
-    background: linear-gradient(135deg,
-      rgba(30, 41, 59, 0.9) 0%,
-      rgba(30, 41, 59, 0.5) 100%);
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(30, 41, 59, 0.5) 100%);
     border-top-color: rgba(255, 255, 255, 0.1);
 
     span {
@@ -1075,5 +1128,421 @@
       background: rgba(255, 255, 255, 0.1);
       border-color: rgba(255, 255, 255, 0.2);
     }
+  }
+}
+
+/* 新增样式优化 - 提高优先级 */
+.register-form {
+  .el-form-item {
+    margin-bottom: calc(0.7rem + 5px) !important; /* 在原基础上增加5px */
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important; /* 确保表单项占满宽度 */
+  }
+
+  :deep(.el-form-item__label) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 35px !important; /* 调整高度匹配输入框 */
+    padding: 0 12px !important;
+    font-weight: 500;
+    color: #2c3e50;
+    min-width: 80px;
+    text-align: center;
+    font-size: 0.85rem; /* 进一步减小字体 */
+    flex-shrink: 0 !important; /* 防止标签收缩 */
+  }
+
+  :deep(.el-form-item__content) {
+    display: flex !important;
+    align-items: center !important;
+    flex: 1 !important; /* 占据剩余空间 */
+    min-width: 0 !important; /* 允许内容收缩 */
+    width: 100% !important; /* 确保内容区域占满宽度 */
+  }
+
+  .modern-input {
+    margin-bottom: calc(0.2rem + 5px); /* 增加5px间距 */
+    width: 100% !important; /* 输入框占满容器 */
+
+    :deep(.el-input__wrapper) {
+      border-radius: 6px !important; /* 进一步减小圆角 */
+      border: 1.5px solid #e4e7ed;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: #fafbfc;
+      height: 35px !important; /* 增加3px高度 */
+      width: 100% !important; /* 强制宽度100% */
+
+      &:hover {
+        border-color: #4facfe;
+        box-shadow: 0 4px 12px rgba(79, 172, 254, 0.15);
+        background: #ffffff;
+      }
+
+      &.is-focus {
+        border-color: #4facfe;
+        box-shadow: 0 4px 12px rgba(79, 172, 254, 0.25);
+        background: #ffffff;
+      }
+    }
+
+    :deep(.el-input__inner) {
+      font-size: 0.85rem !important; /* 进一步减小字体 */
+      color: #2c3e50;
+      font-weight: 400;
+      height: 35px !important; /* 增加3px高度 */
+      line-height: 35px !important; /* 调整行高 */
+      padding: 0 6px !important; /* 调整内边距为6px */
+      width: 100% !important; /* 强制宽度100% */
+
+      &::placeholder {
+        color: #a0a0a0;
+        font-weight: 300;
+      }
+    }
+
+    :deep(.el-input__prefix) {
+      color: #4facfe;
+    }
+  }
+
+  .input-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+    color: #909399;
+    font-size: 0.8rem;
+    line-height: 1.4;
+
+    &::before {
+      content: '💡';
+      font-size: 0.75rem;
+    }
+  }
+
+  .form-input {
+    margin-bottom: calc(0.5rem + 5px);
+
+    :deep(.el-input__wrapper) {
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      transition: all 0.3s ease;
+
+      &:hover {
+        box-shadow: 0 4px 12px rgba(79, 172, 254, 0.15);
+      }
+
+      &.is-focus {
+        box-shadow: 0 4px 12px rgba(79, 172, 254, 0.25);
+      }
+    }
+  }
+
+  .phone-input {
+    margin-bottom: calc(0.2rem + 5px) !important;
+    width: 100% !important; /* 输入框占满容器 */
+
+    :deep(.el-input__wrapper) {
+      border-radius: 6px !important; /* 进一步减小圆角 */
+      border: 1.5px solid #e4e7ed;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: #fafbfc;
+      height: 35px !important; /* 增加3px高度 */
+      width: 100% !important; /* 强制宽度100% */
+
+      &:hover {
+        border-color: #4facfe;
+        box-shadow: 0 4px 12px rgba(79, 172, 254, 0.15);
+        background: #ffffff;
+      }
+
+      &.is-focus {
+        border-color: #4facfe;
+        box-shadow: 0 4px 12px rgba(79, 172, 254, 0.25);
+        background: #ffffff;
+      }
+
+      .el-input__inner {
+        font-size: 0.85rem !important; /* 进一步减小字体 */
+        letter-spacing: 0.5px;
+        height: 35px !important; /* 增加3px高度 */
+        line-height: 35px !important; /* 调整行高 */
+        padding: 0 6px !important; /* 调整内边距为6px */
+        width: 100% !important; /* 强制宽度100% */
+      }
+    }
+  }
+
+  .phone-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.2rem; /* 进一步减小顶部间距 */
+    color: #606266;
+    font-size: 0.8rem;
+    padding: 4px 8px; /* 进一步减小内边距 */
+    background: rgba(79, 172, 254, 0.05);
+    border-radius: 4px;
+    border-left: 2px solid #4facfe;
+
+    .el-icon {
+      color: #4facfe;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    span {
+      line-height: 1.3;
+    }
+  }
+
+  .sms-btn {
+    border-radius: 0 4px 4px 0; /* 进一步减小圆角 */
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    border: none;
+    height: 35px !important; /* 增加3px高度 */
+    padding: 0 8px !important; /* 进一步减小内边距 */
+    font-size: 0.75rem; /* 进一步减小字体 */
+
+    &:hover {
+      background: linear-gradient(135deg, #3d8bfd 0%, #00d4fe 100%);
+    }
+  }
+
+  .user-type-group {
+    display: flex;
+    gap: 1rem;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }
+
+  .user-type-display {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem; /* 进一步减小间距 */
+
+    .user-type-tag {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 4px 10px; /* 进一步减小内边距 */
+      font-size: 0.8rem; /* 进一步减小字体 */
+      font-weight: 500;
+      border-radius: 6px; /* 进一步减小圆角 */
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      border: none;
+      width: fit-content;
+      box-shadow: 0 2px 6px rgba(79, 172, 254, 0.2);
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(79, 172, 254, 0.3);
+      }
+
+      .el-icon {
+        font-size: 0.8rem;
+      }
+    }
+
+    .user-type-hint {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      color: #606266;
+      font-size: 0.75rem; /* 进一步减小字体 */
+      padding: 4px 8px; /* 进一步减小内边距 */
+      background: rgba(79, 172, 254, 0.08);
+      border-radius: 4px;
+      border-left: 2px solid #4facfe;
+
+      .el-icon {
+        color: #4facfe;
+        font-size: 0.75rem;
+        flex-shrink: 0;
+      }
+
+      span {
+        line-height: 1.2;
+      }
+    }
+  }
+
+  .password-strength {
+    margin-top: 0.3rem; /* 减小间距 */
+
+    /* 强制占满一整行，避免被 el-form-item 的 flex 布局挤压 */
+    display: block;
+    width: 100%;
+
+    .strength-bar {
+      display: block; /* 确保为块级元素，百分比宽度基于父元素 */
+      height: 3px; /* 减小高度 */
+      border-radius: 2px;
+      background: #e4e7ed;
+      width: 0; /* 默认宽度为0，按强度类覆盖 */
+      transition: all 0.3s ease;
+
+      &.weak {
+        background: #f56c6c;
+        width: 33%;
+      }
+
+      &.medium {
+        background: #e6a23c;
+        width: 66%;
+      }
+
+      &.strong {
+        background: #67c23a;
+        width: 100%;
+      }
+    }
+  }
+}
+
+.success-content {
+  text-align: center;
+  padding: 2rem;
+
+  .success-icon {
+    font-size: 4rem;
+    color: #67c23a;
+    margin-bottom: 1.5rem;
+    animation: successPulse 0.6s ease-in-out;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    color: #606266;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  .success-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .login-btn {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      border: none;
+      padding: 12px 2rem;
+    }
+
+    .home-btn {
+      border: 1px solid #4facfe;
+      color: #4facfe;
+      background: transparent;
+
+      &:hover {
+        background: rgba(79, 172, 254, 0.1);
+      }
+    }
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.8rem; /* 减小按钮间距 */
+  justify-content: space-between;
+  margin-top: 0.8rem; /* 进一步减小顶部间距 */
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .prev-btn {
+    border: 1px solid #4facfe;
+    color: #4facfe;
+    background: transparent;
+
+    &:hover {
+      background: rgba(79, 172, 254, 0.1);
+    }
+  }
+
+  .next-btn {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    border: none;
+    flex: 1;
+
+    &:hover {
+      background: linear-gradient(135deg, #3d8bfd 0%, #00d4fe 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+    }
+  }
+}
+
+.agreement {
+  text-align: center;
+  margin-top: 0.8rem; /* 进一步减小顶部间距 */
+  color: #606266;
+  font-size: 0.8rem; /* 进一步减小字体 */
+
+  .el-checkbox {
+    margin-right: 0.4rem;
+  }
+
+  .el-link {
+    margin: 0 0.2rem;
+  }
+}
+
+.login-link {
+  text-align: center;
+  margin-top: 0.6rem; /* 进一步减小顶部间距 */
+  color: #606266;
+  font-size: 0.8rem; /* 进一步减小字体 */
+
+  .login-link-btn {
+    font-weight: 500;
+    margin-left: 0.4rem;
+  }
+}
+
+/* 动画效果 */
+@keyframes successPulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes gradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
   }
 }

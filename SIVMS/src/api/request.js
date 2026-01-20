@@ -2,7 +2,7 @@
 import axios from 'axios'
 
 const service = axios.create({
-  baseURL: 'http://localhost:8080', // 后端地址
+  baseURL: 'http://wxun.asia:8080', // 后端地址
   timeout: 10000,
 })
 

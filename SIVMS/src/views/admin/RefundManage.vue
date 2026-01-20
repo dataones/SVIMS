@@ -1,5 +1,5 @@
 <template>
-    <HeaderNav />
+  <HeaderNav />
   <div class="refund-manage">
     <div class="header">
       <h2>退款管理</h2>
@@ -156,7 +156,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { adminListOrders, processRefund } from '@/api/settlement'
+import { getOrderList, processRefund } from '@/api/settlement'
 
 // 响应式数据
 const loading = ref(false)
@@ -210,7 +210,7 @@ const fetchOrders = async () => {
       username: filterForm.username || undefined,
     }
 
-    const response = await adminListOrders(params)
+    const response = await getOrderList(params)
     if (response.code === 200) {
       orderList.value = response.data.records || []
       pagination.total = response.data.total || 0

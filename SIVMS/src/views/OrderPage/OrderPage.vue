@@ -63,7 +63,7 @@
                   >
                     <div class="day-number">{{ day.day }}</div>
                     <div v-if="day.isToday" class="today-label">今天</div>
-                    <!-- <div v-if="day.price" class="day-price">¥{{ day.price }}</div> -->
+
                     <div v-if="day.isDisabled" class="day-status">不可订</div>
                   </div>
                 </div>
@@ -105,11 +105,11 @@
                     <div class="slot-range">{{ slot.startTime }}</div>
                   </div>
                   <div class="slot-info">
-                    <div class="slot-price">
-                      ¥<span class="price-number">{{ slot.price }}</span>
-                    </div>
+                    <span class="slot-price">
+                      ¥<span class="price-number">{{ formatMoney(slot.price) }}</span>
+                    </span>
                     <div v-if="slot.isPeak" class="peak-badge">高峰</div>
-                    <div v-if="slot.disabled" class="slot-status">已订满</div>
+
                     <div v-else-if="selectedSlots.includes(slot.id)" class="slot-status selected">
                       <i class="el-icon-check"></i>
                     </div>
@@ -226,32 +226,32 @@
                   <div class="price-details">
                     <div class="price-item">
                       <span class="price-label">场地费用</span>
-                      <span class="price-value">¥{{ venuePrice }}</span>
+                      <span class="price-value">¥{{ formatMoney(venuePrice) }}</span>
                     </div>
                     <div class="price-item" v-if="equipmentCost > 0">
                       <span class="price-label">设备租赁</span>
-                      <span class="price-value">¥{{ equipmentCost }}</span>
+                      <span class="price-value">¥{{ formatMoney(equipmentCost) }}</span>
                     </div>
                     <div class="price-item">
                       <span class="price-label">服务费</span>
-                      <span class="price-value">¥{{ serviceFee }}</span>
+                      <span class="price-value">¥{{ formatMoney(serviceFee) }}</span>
                     </div>
                     <div class="price-item discount" v-if="discount > 0">
                       <span class="price-label">
                         <i class="el-icon-discount"></i>
                         优惠折扣
                       </span>
-                      <span class="price-value">-¥{{ discount }}</span>
+                      <span class="price-value">-¥{{ formatMoney(discount) }}</span>
                     </div>
                   </div>
 
                   <div class="price-total">
                     <div class="total-item">
                       <span class="total-label">合计金额</span>
-                      <span class="total-value">¥{{ totalPrice }}</span>
+                      <span class="total-value">¥{{ formatMoney(totalPrice) }}</span>
                     </div>
                     <div v-if="originalPrice > totalPrice" class="original-price">
-                      原价：¥{{ originalPrice }}
+                      原价：¥{{ formatMoney(originalPrice) }}
                     </div>
                   </div>
                 </div>
@@ -544,7 +544,7 @@ export default {
     // 在生成时使用 normalizeTime，保证 "09:00" 形式
     const generateTimeSlots = () => {
       timeSlots.value = []
-      const basePrice = Number(venueInfo.value.price || 0) || 100
+      const basePrice = Number(venueInfo.value.price || 0)
       const open = venueInfo.value.openTime || '08:00'
       const close = venueInfo.value.closeTime || '22:00'
       const startHour = parseInt(open.split(':')[0], 10)
@@ -552,16 +552,17 @@ export default {
       for (let h = startHour; h < endHour; h++) {
         const isPeak = h >= 18 && h < 21
         const price = isPeak ? Math.round(basePrice * 1.2) : basePrice
-        const startTime = normalizeTime(`${String(h).padStart(2, '0')}:00`)
-        const endTime = normalizeTime(`${String(h + 1).padStart(2, '0')}:00`)
-        timeSlots.value.push({
-          id: startTime,
-          startTime,
-          endTime,
+        const slot = {
+          id: `${String(h).padStart(2, '0')}:00`,
+          startTime: normalizeTime(`${String(h).padStart(2, '0')}:00`),
+          endTime: normalizeTime(`${String(h + 1).padStart(2, '0')}:00`),
           price,
           isPeak,
-          disabled: bookedStartTimes.value.includes(startTime),
-        })
+          disabled: bookedStartTimes.value.includes(
+            normalizeTime(`${String(h).padStart(2, '0')}:00`),
+          ),
+        }
+        timeSlots.value.push(slot)
       }
     }
 
@@ -736,7 +737,15 @@ export default {
     const toggleTimeSlot = (slot) => {
       if (slot.disabled) return
 
-      const time = slot.startTime
+      const time = normalizeTime(slot.startTime)
+
+      // 如果选择的是当前时间段，则取消选择
+      if (selectedSlots.value.includes(slot.id)) {
+        selectedSlots.value = selectedSlots.value.filter((id) => id !== slot.id)
+      } else {
+        // 否则添加到选择列表
+        selectedSlots.value.push(slot.id)
+      }
 
       // 情况 1：什么都没选 → 设为开始时间
       if (!startTime.value && !endTime.value) {
@@ -878,7 +887,7 @@ export default {
         .reduce((sum, slot) => sum + slot.price, 0)
     })
 
-    const serviceFee = computed(() => Math.round(venuePrice.value * 0.1))
+    const serviceFee = computed(() => venuePrice.value * 0.1)
     const equipmentCost = computed(() => 0)
     // const discount = computed(() => selectedCoupon.value?.value || 0)
     const totalPrice = computed(() => venuePrice.value + serviceFee.value)
@@ -887,6 +896,12 @@ export default {
     const selectedTimeSlots = computed(() =>
       timeSlots.value.filter((slot) => selectedSlots.value.includes(slot.id)),
     )
+
+    // 金额格式化函数 - 确保显示2位小数
+    const formatMoney = (value) => {
+      const n = Number(value || 0)
+      return Number.isFinite(n) ? n.toFixed(2) : '0.00'
+    }
     // 允许进入下一步：必须有场馆、有选择日期且至少选中一个起始时间，并且填写预订人数
     const canProceed = computed(() => {
       return (
@@ -940,6 +955,8 @@ export default {
       selectedTimeSlots,
       // isPaymentDisabled,
       orderExpireTime,
+      // 金额格式化函数
+      formatMoney,
 
       // 方法
       submitOrder,
@@ -1103,6 +1120,7 @@ export default {
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
+  min-height: 360px; /* 固定日历区域最小高度 */
 }
 
 .week-header {
@@ -1124,10 +1142,11 @@ export default {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
+  min-height: 280px; /* 固定最小高度，确保6行日期 */
 }
 
 .calendar-day {
-  aspect-ratio: 1;
+  height: 40px; /* 固定高度替代aspect-ratio */
   border-radius: 8px;
   padding: 8px;
   cursor: pointer;
@@ -1195,6 +1214,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 15px 0;
+  min-height: 50px; /* 固定最小高度 */
 
   .selected-date-display {
     display: flex;
@@ -1203,6 +1223,7 @@ export default {
     font-size: 16px;
     font-weight: 600;
     color: #1e293b;
+    min-width: 180px; /* 固定最小宽度 */
 
     i {
       color: #667eea;
@@ -1215,6 +1236,7 @@ export default {
     gap: 6px;
     font-size: 12px;
     color: #64748b;
+    min-width: 160px; /* 固定最小宽度 */
 
     i {
       font-size: 14px;
@@ -1509,19 +1531,11 @@ export default {
       border-bottom: none;
     }
 
-    &.discount {
-      .price-label {
-        color: #10b981;
-      }
-
-      .price-value {
-        color: #10b981;
-      }
-    }
-
     .price-label {
       color: #64748b;
       font-size: 14px;
+      min-width: 80px;
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -1531,6 +1545,19 @@ export default {
       color: #1e293b;
       font-size: 16px;
       font-weight: 600;
+      text-align: right;
+      min-width: 100px;
+      flex: 1;
+    }
+
+    &.discount {
+      .price-label {
+        color: #10b981;
+      }
+
+      .price-value {
+        color: #10b981;
+      }
     }
   }
 }
@@ -1539,7 +1566,6 @@ export default {
   background: white;
   border-radius: 8px;
   padding: 20px;
-  margin-bottom: 20px;
 
   .total-item {
     display: flex;
@@ -1550,21 +1576,24 @@ export default {
       font-size: 16px;
       font-weight: 600;
       color: #1e293b;
+      flex: 0 0 auto;
     }
 
     .total-value {
       font-size: 28px;
       font-weight: 700;
       color: #c3c000;
+      text-align: right;
+      min-width: 120px;
+      flex: 1;
     }
   }
 
   .original-price {
-    text-align: right;
     font-size: 14px;
-    color: #94a3b8;
-    text-decoration: line-through;
-    margin-top: 5px;
+    color: #999;
+    text-align: right;
+    margin-top: 8px;
   }
 }
 
@@ -1573,41 +1602,40 @@ export default {
     display: flex;
     margin-bottom: 15px;
 
-    &:last-child {
-      margin-bottom: 0;
-    }
-
     .user-label {
       flex: 0 0 80px;
       color: #64748b;
       font-size: 14px;
+      align-self: flex-start;
     }
 
     .user-value {
       flex: 1;
       color: #1e293b;
       font-size: 14px;
+      text-align: left;
+      align-self: flex-start;
+    }
+  }
 
-      .vip-badge {
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        color: white;
-        padding: 4px 12px;
-        border-radius: 4px;
-        font-size: 12px;
-        font-weight: 600;
+  .vip-badge {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
 
-        &.黄金 {
-          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        }
+    &.黄金 {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
 
-        &.白金 {
-          background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
-        }
+    &.白金 {
+      background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    }
 
-        &.钻石 {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-      }
+    &.钻石 {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
   }
 }

@@ -160,7 +160,9 @@ const fetchNoticeDetail = async () => {
       notice.value = null
     }
   } catch (error) {
-    console.error('获取公告详情失败:', error)
+    console.error('❌ 获取公告详情失败:', error)
+    console.error('❌ 错误状态码:', error.response?.status)
+    console.error('❌ 错误信息:', error.response?.data)
     ElMessage.error('获取公告详情失败')
     notice.value = null
   } finally {

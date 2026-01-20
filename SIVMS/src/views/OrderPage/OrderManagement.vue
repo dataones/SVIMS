@@ -183,6 +183,8 @@
                 size="large"
                 @change="handleSearch"
               >
+                <el-option label="更新时间（最新）" value="update_time_desc" />
+                <el-option label="更新时间（最早）" value="update_time_asc" />
                 <el-option label="下单时间（最新）" value="create_time_desc" />
                 <el-option label="下单时间（最早）" value="create_time_asc" />
                 <el-option label="订单金额（最高）" value="amount_desc" />
@@ -254,7 +256,11 @@
               </div>
               <div class="order-amount">
                 <span class="label">订单金额：</span>
-                <span class="value">¥{{ order.totalAmount }}</span>
+                <span class="value">¥{{ formatMoney(order.totalAmount) }}</span>
+              </div>
+              <!-- 倒计时显示（仅未支付订单显示） -->
+              <div v-if="!order.paid && order.status == 1" class="order-countdown">
+                <span class="countdown-text">{{ getCountdownText(order.createTime) }}</span>
               </div>
             </div>
 
@@ -427,23 +433,20 @@
                 <div class="total-details">
                   <div class="detail-item">
                     <span>场地费用：</span>
-                    <span>¥{{ order.venuePrice }}</span>
+                    <span>¥{{ formatMoney(order.venuePrice) }}</span>
                   </div>
                   <div class="detail-item" v-if="order.equipmentFee > 0">
                     <span>设备费用：</span>
-                    <span>¥{{ order.equipmentFee }}</span>
+                    <span>¥{{ formatMoney(order.equipmentFee) }}</span>
                   </div>
                   <div class="detail-item" v-if="order.discount > 0">
                     <span>优惠减免：</span>
                     <span class="discount">-¥{{ order.discount }}</span>
                   </div>
-                  <div class="detail-item">
-                    <span>服务费用：</span>
-                    <span>¥{{ order.serviceFee }}</span>
-                  </div>
+
                   <div class="detail-item total">
                     <span>实付金额：</span>
-                    <span class="amount">¥{{ order.totalAmount }}</span>
+                    <span class="amount">¥{{ order.payAmount ?? order.totalAmount }}</span>
                   </div>
                 </div>
               </div>
@@ -479,7 +482,14 @@
               </div>
               <div class="order-amount">
                 <span class="label">订单金额：</span>
-                <span class="value">¥{{ order.totalAmount }}</span>
+                <span class="value">¥{{ formatMoney(order.totalAmount) }}</span>
+              </div>
+              <!-- 倒计时显示（仅未支付订单显示） -->
+              <div
+                v-if="!order.paid && order.status !== 3 && order.status !== 2"
+                class="order-countdown"
+              >
+                <span class="countdown-text">{{ getCountdownText(order.createTime) }}</span>
               </div>
             </div>
 
@@ -496,7 +506,7 @@
                     <div class="equipment-meta">
                       <span class="meta-item">
                         <i class="el-icon-price-tag"></i>
-                        单价：¥{{ item.unitPrice }}
+                        单价：¥{{ formatMoney(item.unitPrice) }}
                       </span>
                       <span class="meta-item">
                         <i class="el-icon-box"></i>
@@ -507,7 +517,7 @@
                   <div class="equipment-price">
                     <div class="price-item">
                       <span class="label">小计：</span>
-                      <span class="value">¥{{ item.totalPrice }}</span>
+                      <span class="value">¥{{ formatMoney(item.totalPrice) }}</span>
                     </div>
                   </div>
                 </div>
@@ -623,15 +633,15 @@
                 <div class="total-details">
                   <div class="detail-item">
                     <span>器材费用：</span>
-                    <span>¥{{ order.equipmentAmount }}</span>
+                    <span>¥{{ formatMoney(order.equipmentAmount) }}</span>
                   </div>
                   <div class="detail-item" v-if="order.deliveryFee > 0">
                     <span>配送费用：</span>
-                    <span>¥{{ order.deliveryFee }}</span>
+                    <span>¥{{ formatMoney(order.deliveryFee) }}</span>
                   </div>
                   <div class="detail-item" v-if="order.deposit > 0">
                     <span>押金：</span>
-                    <span>¥{{ order.deposit }}</span>
+                    <span>¥{{ formatMoney(order.deposit) }}</span>
                   </div>
                   <div class="detail-item" v-if="order.discount > 0">
                     <span>优惠减免：</span>
@@ -639,7 +649,7 @@
                   </div>
                   <div class="detail-item total">
                     <span>实付金额：</span>
-                    <span class="amount">¥{{ order.totalAmount }}</span>
+                    <span class="amount">¥{{ order.payAmount ?? order.totalAmount }}</span>
                   </div>
                 </div>
               </div>
@@ -706,11 +716,13 @@
           </div>
           <div class="info-item">
             <span class="label">订单金额：</span>
-            <span class="value amount">¥{{ refundForm.order.totalAmount }}</span>
+            <span class="value amount">¥{{ formatMoney(refundForm.order.totalAmount) }}</span>
           </div>
           <div class="info-item">
             <span class="label">可退金额：</span>
-            <span class="value refundable">¥{{ refundForm.order.totalAmount }}</span>
+            <span class="value refundable"
+              >¥{{ formatMoney(refundForm.order.payAmount ?? refundForm.order.totalAmount) }}</span
+            >
           </div>
         </div>
 
@@ -732,7 +744,7 @@
             <el-input-number
               v-model="refundForm.amount"
               :min="0.01"
-              :max="refundForm.order?.totalAmount || 0"
+              :max="(refundForm.order?.payAmount ?? refundForm.order?.totalAmount) || 0"
               :precision="2"
               :step="0.01"
               style="width: 100%"
@@ -812,7 +824,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
@@ -838,6 +850,21 @@ export default {
     const isLogin = computed(() => userStore.isLogin)
     const userName = computed(() => userStore.name)
 
+    const getRoleDiscountRate = () => {
+      const role = userStore.userInfo?.role
+      if (role === 1) return 0.88
+      if (role === 2) return 0.6
+      return 1
+    }
+
+    const calcPayAmount = (amount, paid) => {
+      const n = Number(amount || 0)
+      if (!Number.isFinite(n)) return 0
+      // 统一按角色折扣计算，不管是否已支付
+      const finalAmount = n * getRoleDiscountRate()
+      return Math.round(finalAmount * 100) / 100
+    }
+
     // 订单类型：0-场馆订单，1-器材订单
     const orderType = ref(0)
     const handleReview = (orderId) => {
@@ -852,7 +879,7 @@ export default {
     const searchKeyword = ref('')
     const selectedStatus = ref('')
     const dateRange = ref([])
-    const sortField = ref('create_time_desc')
+    const sortField = ref('update_time_desc')
     const orders = ref([])
     const loading = ref(false)
     const currentPage = ref(1)
@@ -920,6 +947,44 @@ export default {
       { value: 4, label: '已驳回' },
     ]
 
+    // 订单自动取消倒计时相关
+    const AUTO_CANCEL_MINUTES = 30 // 自动取消时间（分钟）
+    const countdownTimers = ref(new Map()) // 存储倒计时定时器
+
+    // 计算剩余时间（分钟）
+    const getRemainingMinutes = (createTime) => {
+      if (!createTime) return 0
+      const created = new Date(createTime)
+      const now = new Date()
+      const elapsed = (now - created) / (1000 * 60) // 已过分钟数
+      const remaining = AUTO_CANCEL_MINUTES - elapsed
+      return Math.max(0, Math.floor(remaining))
+    }
+
+    // 格式化倒计时显示
+    const formatCountdown = (minutes) => {
+      if (minutes <= 0) return '已过期'
+      const hours = Math.floor(minutes / 60)
+      const mins = minutes % 60
+      if (hours > 0) {
+        return `${hours}小时${mins}分钟`
+      }
+      return `${mins}分钟`
+    }
+
+    // 获取倒计时文本
+    const getCountdownText = (createTime) => {
+      const remaining = getRemainingMinutes(createTime)
+      if (remaining <= 0) return '订单已自动取消'
+      return `剩余支付时间：${formatCountdown(remaining)}`
+    }
+
+    // 金额格式化函数 - 确保显示2位小数
+    const formatMoney = (value) => {
+      const n = Number(value || 0)
+      return Number.isFinite(n) ? n.toFixed(2) : '0.00'
+    }
+
     // 计算属性
     const hasFilters = computed(() => {
       return searchKeyword.value || selectedStatus.value !== '' || dateRange.value?.length > 0
@@ -929,9 +994,42 @@ export default {
     watch(orderType, () => {
       currentPage.value = 1
       resetFilters()
+      clearAllCountdownTimers() // 清除倒计时定时器
       loadOrders()
       loadOrderStats()
     })
+
+    // 清除所有倒计时定时器
+    const clearAllCountdownTimers = () => {
+      countdownTimers.value.forEach((timer) => clearInterval(timer))
+      countdownTimers.value.clear()
+    }
+
+    // 启动倒计时定时器
+    const startCountdownTimer = (orderId, createTime) => {
+      // 清除该订单的旧定时器
+      if (countdownTimers.value.has(orderId)) {
+        clearInterval(countdownTimers.value.get(orderId))
+      }
+
+      // 如果订单已过期或已支付，不启动定时器
+      const remaining = getRemainingMinutes(createTime)
+      if (remaining <= 0) return
+
+      // 启动新的定时器，每分钟更新一次
+      const timer = setInterval(() => {
+        const currentRemaining = getRemainingMinutes(createTime)
+        if (currentRemaining <= 0) {
+          clearInterval(timer)
+          countdownTimers.value.delete(orderId)
+          // 可以在这里刷新订单列表或显示提示
+          ElMessage.warning('订单已自动取消')
+          loadOrders() // 刷新订单列表
+        }
+      }, 60000) // 每分钟检查一次
+
+      countdownTimers.value.set(orderId, timer)
+    }
 
     // 监听登录状态变化
     watch(isLogin, (newVal) => {
@@ -951,6 +1049,11 @@ export default {
       }
     })
 
+    // 组件卸载时清除所有定时器
+    onUnmounted(() => {
+      clearAllCountdownTimers()
+    })
+
     // 方法
     const loadOrders = async () => {
       if (!isLogin.value) return
@@ -963,6 +1066,9 @@ export default {
         // 处理分页数据结构
         const apiOrders = response.data?.records || response.data || []
         const apiTotal = response.data?.total || 0
+
+        // 清除旧的倒计时定时器
+        clearAllCountdownTimers()
 
         // 根据API返回的数据格式处理
         let processedOrders = []
@@ -986,6 +1092,7 @@ export default {
               serviceFee: 0,
               discount: 0,
               totalAmount: item.amount,
+              payAmount: calcPayAmount(item.amount),
               status: item.status,
               createTime: createDate.toLocaleString('zh-CN'),
               bookingDate: item.date ? item.date.split('T')[0] : '',
@@ -1026,6 +1133,7 @@ export default {
               deposit: 0,
               discount: 0,
               totalAmount: item.amount,
+              payAmount: calcPayAmount(item.amount),
               status: item.status,
               createTime: createDate.toLocaleString('zh-CN'),
               rentalDays: 1,
@@ -1040,6 +1148,16 @@ export default {
 
         // 应用筛选
         let filteredOrders = processedOrders
+
+        // 为审核通过的场馆订单启动倒计时定时器
+        processedOrders.forEach((order) => {
+          // 只有场馆订单（orderType === 0）且状态为已通过（status === 1）且未支付才启动倒计时
+          const shouldStartCountdown = !order.paid && order.orderType === 0 && order.status === 1
+
+          if (shouldStartCountdown) {
+            startCountdownTimer(order.id, order.createTime)
+          }
+        })
 
         // 关键词搜索
         if (searchKeyword.value) {
@@ -1136,10 +1254,14 @@ export default {
             return new Date(b.createTime) - new Date(a.createTime)
           case 'create_time_asc':
             return new Date(a.createTime) - new Date(b.createTime)
+          case 'update_time_desc':
+            return new Date(b.updateTime || b.createTime) - new Date(a.updateTime || a.createTime)
+          case 'update_time_asc':
+            return new Date(a.updateTime || a.createTime) - new Date(b.updateTime || b.createTime)
           case 'amount_desc':
-            return b.totalAmount - a.totalAmount
+            return Number(b.totalAmount || 0) - Number(a.totalAmount || 0)
           case 'amount_asc':
-            return a.totalAmount - b.totalAmount
+            return Number(a.totalAmount || 0) - Number(b.totalAmount || 0)
           default:
             return 0
         }
@@ -1233,7 +1355,7 @@ export default {
       searchKeyword.value = ''
       selectedStatus.value = ''
       dateRange.value = []
-      sortField.value = 'create_time_desc'
+      sortField.value = 'update_time_desc'
       currentPage.value = 1
     }
 
@@ -1397,7 +1519,7 @@ export default {
       refundForm.value = {
         order: order,
         reason: '',
-        amount: order.totalAmount,
+        amount: order.payAmount ?? order.totalAmount,
         remark: '',
       }
       showRefundDialog.value = true
@@ -1414,18 +1536,16 @@ export default {
 
       refundLoading.value = true
       try {
-        const refundData = {
-          orderNo: refundForm.value.order.orderNumber,
-          amount: refundForm.value.amount,
-          reason: refundForm.value.reason,
-          remark: refundForm.value.remark,
-        }
-
         // 调用退款申请接口
         const response = await request({
           url: '/api/refund/request',
           method: 'post',
-          data: refundData,
+          data: {
+            orderNo: refundForm.value.order.orderNumber,
+            refundAmount: refundForm.value.amount,
+            reason: refundForm.value.reason,
+            remark: refundForm.value.remark,
+          },
         })
 
         if (response.code === 200) {
@@ -1574,6 +1694,12 @@ export default {
       createEquipmentOrder,
       goToBooking,
       goToLogin,
+      // 倒计时相关函数
+      getCountdownText,
+      getRemainingMinutes,
+      formatCountdown,
+      // 金额格式化函数
+      formatMoney,
     }
   },
 }
@@ -2162,6 +2288,33 @@ export default {
       font-size: 24px;
       font-weight: 700;
       color: #e38f19;
+    }
+  }
+
+  .order-countdown {
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(238, 90, 36, 0.3);
+
+    .countdown-text {
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      display: block;
+      animation: pulse 2s infinite;
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.8;
+        }
+      }
     }
   }
 }

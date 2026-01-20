@@ -239,7 +239,12 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import HeaderNav from '../Home/components/HeaderNav/HeaderNav.vue'
-import { getPendingBookings, getPendingRentals } from '@/api/approval'
+import {
+  getPendingBookings,
+  getPendingRentals,
+  getPendingRefunds,
+  auditRefund,
+} from '@/api/approval'
 import { approveRental, rejectRental } from '@/api/equipment'
 import { auditBooking } from '@/api/booking'
 import request from '@/api/request'
@@ -346,14 +351,7 @@ export default {
         .then(async () => {
           loading.value = true
           try {
-            const res = await request({
-              url: `/api/refund/audit/${id}`,
-              method: 'put',
-              data: {
-                approved: pass,
-                auditRemark: '',
-              },
-            })
+            const res = await auditRefund(id, pass, '')
 
             if (res && res.code === 200) {
               ElMessage.success('操作成功')

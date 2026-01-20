@@ -111,7 +111,7 @@
             <div class="price-content">
               <div class="current-price">
                 <span class="price-label">¥</span>
-                <span class="price-value">{{ venue.price || '150' }}</span>
+                <span class="price-value">{{ venue.price }}</span>
               </div>
               <div v-if="venue.originalPrice" class="original-price">
                 原价：¥{{ venue.originalPrice }}

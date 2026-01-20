@@ -9,11 +9,12 @@
       :limit="1"
       accept="image/*"
       :auto-upload="false"
+      :disabled="uploading"
     >
       <template #trigger>
-        <el-button type="primary">
+        <el-button type="primary" :loading="props.loading || uploading">
           <el-icon><Upload /></el-icon>
-          选择图片
+          {{ uploading ? '上传中...' : '选择图片' }}
         </el-button>
       </template>
 
@@ -50,6 +51,11 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  // 父组件可通过此 prop 控制上传 loading 状态（父负责实际上传）
+  loading: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 // Emits
@@ -77,7 +83,7 @@ const handleFileChange = (file, fileList) => {
       return
     }
 
-    // 保存选中的文件供后续上传
+    // 保存选中的文件供后续上传（实际上传由父组件触发）
     selectedFile.value = file.raw
 
     // 创建本地预览URL
@@ -88,14 +94,29 @@ const handleFileChange = (file, fileList) => {
 }
 
 // 上传成功
-const handleSuccess = (response) => {}
+const handleSuccess = (response) => {
+  // 上传成功后重置状态
+  selectedFile.value = null
+  uploading.value = false
+}
 
 // 上传失败
-const handleError = (error) => {}
+const handleError = (error) => {
+  // 上传失败后重置状态
+  selectedFile.value = null
+  uploading.value = false
+}
 
 // 删除图片
 const removeImage = () => {
+  // 清理blob URL以避免内存泄漏
+  if (imageUrl.value && imageUrl.value.startsWith('blob:')) {
+    URL.revokeObjectURL(imageUrl.value)
+  }
+
   imageUrl.value = ''
+  selectedFile.value = null
+  uploading.value = false
   emit('update:modelValue', '')
 }
 
@@ -103,7 +124,19 @@ const removeImage = () => {
 watch(
   () => props.modelValue,
   (newValue) => {
+    const prev = imageUrl.value
     imageUrl.value = newValue
+
+    // 如果传入的是远程 URL（非 blob），说明上传已完成，重置 uploading
+    if (newValue && !newValue.startsWith('blob:')) {
+      uploading.value = false
+      // 如果之前使用了 blob URL，回收它
+      if (prev && prev.startsWith('blob:') && prev !== newValue) {
+        try {
+          URL.revokeObjectURL(prev)
+        } catch (e) {}
+      }
+    }
   },
 )
 </script>

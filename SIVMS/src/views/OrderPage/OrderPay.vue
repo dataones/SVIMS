@@ -57,7 +57,17 @@
 
                   <div class="info-item">
                     <span class="label">订单金额：</span>
-                    <span class="value amount">¥{{ orderInfo.totalPrice }}</span>
+                    <span class="value amount">¥{{ formatMoney(orderInfo.totalPrice) }}</span>
+                  </div>
+
+                  <div class="info-item" v-if="discountRate < 1">
+                    <span class="label">折扣优惠：</span>
+                    <span class="value">{{ discountText }}</span>
+                  </div>
+
+                  <div class="info-item" v-if="discountRate < 1">
+                    <span class="label">应付金额：</span>
+                    <span class="value amount">¥{{ formatMoney(payAmount) }}</span>
                   </div>
 
                   <div class="info-item">
@@ -86,7 +96,7 @@
               :disabled="isPaying"
             >
               <i class="el-icon-money"></i>
-              确认支付 ¥{{ orderInfo.totalPrice }}
+              确认支付 ¥{{ formatMoney(payAmount) }}
             </el-button>
           </div>
         </div>
@@ -109,7 +119,11 @@
                 </div>
                 <div class="info-item">
                   <span>支付金额：</span>
-                  <strong class="amount">¥{{ orderInfo.totalPrice }}</strong>
+                  <strong class="amount">¥{{ formatMoney(payAmount) }}</strong>
+                </div>
+                <div class="info-item" v-if="discountRate < 1">
+                  <span>折扣优惠：</span>
+                  <strong>{{ discountText }}</strong>
                 </div>
                 <div class="info-item">
                   <span>支付时间：</span>
@@ -156,6 +170,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import NavBar from '../Home/components/HeaderNav/HeaderNav.vue'
 import { payOrder } from '@/api/order'
+import { useUserStore } from '@/stores/user'
 
 export default {
   name: 'PaymentPage',
@@ -167,6 +182,7 @@ export default {
   setup() {
     const router = useRouter()
     const route = useRoute()
+    const userStore = useUserStore()
 
     // 支付步骤
     const paymentStep = ref(1)
@@ -189,8 +205,41 @@ export default {
     // 支付状态
     const isPaying = ref(false)
 
+    const discountRate = computed(() => {
+      const role = userStore.userInfo?.role
+      if (role === 1) return 0.88
+      if (role === 2) return 0.6
+      return 1
+    })
+
+    const discountText = computed(() => {
+      const role = userStore.userInfo?.role
+      if (role === 1) return '会员用户 88折'
+      if (role === 2) return '管理员用户 6折'
+      return ''
+    })
+
+    const payAmount = computed(() => {
+      const original = Number(orderInfo.value.totalPrice || 0)
+      const finalAmount = original * discountRate.value
+      return Math.round(finalAmount * 100) / 100
+    })
+
+    const formatMoney = (value) => {
+      const n = Number(value || 0)
+      return Number.isFinite(n) ? n.toFixed(2) : '0.00'
+    }
+
     // 支付页面 setup 中
-    onMounted(() => {
+    onMounted(async () => {
+      if (userStore.token && userStore.userInfo?.role == null) {
+        try {
+          await userStore.getUserInfoAction()
+        } catch (e) {
+          // ignore
+        }
+      }
+
       loadOrderInfo()
       const orderId = route.query.orderId || ''
 
@@ -394,6 +443,9 @@ export default {
 
       // 计算属性
       isExpiringSoon,
+      discountRate,
+      discountText,
+      payAmount,
 
       // 方法
       handlePayment,
@@ -401,6 +453,7 @@ export default {
       viewOrderDetail,
       goHome,
       copyOrderNo,
+      formatMoney,
       formatDate,
       formatDateTime,
       formatTime,

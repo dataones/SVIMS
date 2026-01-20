@@ -8,9 +8,10 @@
         :alt="venue.name"
         @error="handleImageError"
         @load="handleImageLoad"
+        @click.stop="handleDetail"
         style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px 8px 0 0"
       />
-      <div v-if="!venue.image" class="no-image">
+      <div v-if="!venue.image" class="no-image" @click.stop="handleDetail">
         <div class="no-image-icon">🏟️</div>
         <div class="no-image-text">暂无图片</div>
       </div>

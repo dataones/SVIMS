@@ -22,9 +22,6 @@
           <div class="banner-content">
             <h3 class="banner-title">{{ banner.title }}</h3>
             <p class="banner-description">{{ banner.description }}</p>
-            <el-button type="primary" size="large" round class="banner-button">
-              查看详情
-            </el-button>
           </div>
         </div>
       </el-carousel-item>

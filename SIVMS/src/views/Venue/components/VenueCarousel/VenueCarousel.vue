@@ -73,7 +73,7 @@ export default {
           description: '提供最专业的运动场地和设备，满足您的各种运动需求',
           tag: '热门推荐',
           buttonText: '立即预订',
-          link: '/venue?type=篮球馆',
+          link: '/booking',
         },
         {
           image:

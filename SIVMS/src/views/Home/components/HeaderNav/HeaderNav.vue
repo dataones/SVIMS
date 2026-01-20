@@ -79,7 +79,20 @@
           </template>
         </el-tag>
 
-        <el-dropdown @command="handleUserCommand">
+        <!-- 未登录状态：显示登录和注册链接 -->
+        <div v-if="!isLogin" class="auth-links">
+          <el-button type="primary" size="small" @click="handleLogin">
+            <el-icon><User /></el-icon>
+            登录
+          </el-button>
+          <el-button type="success" size="small" @click="handleRegister">
+            <el-icon><Plus /></el-icon>
+            注册
+          </el-button>
+        </div>
+
+        <!-- 已登录状态：显示用户下拉菜单 -->
+        <el-dropdown v-else @command="handleUserCommand">
           <div class="user-info">
             <el-avatar :size="36" :src="userAvatar" :icon="UserFilled" class="user-avatar" />
             <span class="user-name">{{ userName }}</span>
@@ -133,6 +146,7 @@ import {
   Tools,
   SwitchButton,
   Bell,
+  Plus,
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
@@ -153,6 +167,7 @@ export default {
     Tools,
     SwitchButton,
     Bell,
+    Plus,
   },
   emits: ['nav-click'],
   setup(props, { emit }) {
@@ -182,6 +197,9 @@ export default {
     const userAvatar = computed(() => userStore.avatar)
     const messageCount = computed(() => userStore.unreadMessages || 0)
 
+    // 判断是否登录
+    const isLogin = computed(() => userStore.isLogin)
+
     // 判断是否为管理员
     const isAdmin = computed(() => {
       // 根据数据库角色定义：0-普通用户, 1-会员, 2-管理员
@@ -190,6 +208,14 @@ export default {
 
     const handleMenuSelect = (index) => {
       emit('nav-click', { key: index })
+    }
+
+    const handleLogin = () => {
+      router.push('/login')
+    }
+
+    const handleRegister = () => {
+      router.push('/register')
     }
 
     const handleUserCommand = (command) => {
@@ -222,7 +248,8 @@ export default {
       try {
         await userStore.logout()
         ElMessage.success('已退出登录')
-        router.push('/login')
+        // 退出后留在主页，不跳转到登录页
+        router.push('/')
       } catch (error) {
         ElMessage.error('退出登录失败')
       }
@@ -234,6 +261,7 @@ export default {
 
     return {
       activeNav,
+      isLogin,
       userAvatar,
       userName,
       messageCount,
@@ -241,6 +269,8 @@ export default {
       UserFilled,
       handleMenuSelect,
       handleUserCommand,
+      handleLogin,
+      handleRegister,
       goToHome,
     }
   },
@@ -385,6 +415,31 @@ export default {
         display: inline-block !important;
         white-space: nowrap !important;
         vertical-align: middle !important;
+      }
+    }
+
+    .auth-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .el-button {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.85rem;
+        padding: 6px 12px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(79, 172, 254, 0.15);
+        }
+
+        .el-icon {
+          font-size: 0.9rem;
+        }
       }
     }
 

@@ -87,6 +87,12 @@
   z-index: 2;
   opacity: 1;
   animation: slideContentIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s forwards;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 60%; /* 限制内容宽度，避免靠近左右导航 */
+  padding-left: 80px; /* 给左侧留白，防止与左侧导航重叠 */
 }
 
 @keyframes slideContentIn {
@@ -110,25 +116,33 @@
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 1px;
-  margin-bottom: 15px;
   text-transform: uppercase;
   box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+  margin-bottom: 12px;
+  transform: translateY(-110px); /* 向上 110px（在之前基础上再上移20px） */
 }
 
 /* 幻灯片标题 */
 .slide-title {
-  font-size: 2.5rem;
+  font-size: 2.2rem;
   font-weight: 700;
-  margin-bottom: 10px;
+  margin: 0; /* 用 gap 控制间距，避免额外折叠带来重叠 */
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   color: white;
+  line-height: 1.1;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; /* 限制为最多 2 行，避免过长推挤按钮 */
+  overflow: hidden;
+  word-break: break-word;
+  transform: translateY(-110px); /* 标题也向上移动，和标签对齐 */
 }
 
 /* 幻灯片描述 */
 .slide-desc {
   font-size: 1.2rem;
   line-height: 1.6;
-  margin-bottom: 20px;
+  margin: 0;
   opacity: 0.9;
   text-shadow: 1px 2px 4px rgba(0, 0, 0, 0.2);
   max-width: 600px;
@@ -149,6 +163,8 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  align-self: flex-start; /* 确保按钮总是在内容左侧，不会浮到标题位置 */
+  margin-top: 6px;
 }
 
 .slide-btn:hover {
@@ -188,11 +204,11 @@
 }
 
 .carousel-nav.prev {
-  left: 20px;
+  left: 30px;
 }
 
 .carousel-nav.next {
-  right: 20px;
+  right: 30px;
 }
 
 /* 轮播指示器 */
@@ -227,6 +243,14 @@
   background: #4facfe;
   width: 24px;
   border-radius: 4px;
+}
+
+/* 大屏优化：进一步限制文字区宽度并增加左侧留白 */
+@media (min-width: 1400px) {
+  .slide-content {
+    max-width: 55%;
+    padding-left: 100px;
+  }
 }
 
 /* 幻灯片计数器 */
@@ -272,10 +296,17 @@
 
   .slide-content {
     padding: 20px;
+    max-width: 100%;
+    padding-left: 20px; /* 移动端减少左侧留白 */
   }
 
   .slide-title {
     font-size: 1.8rem;
+    transform: translateY(-92px);
+  }
+
+  .slide-tag {
+    transform: translateY(-92px);
   }
 
   .slide-desc {
